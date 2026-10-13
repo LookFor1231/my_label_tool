@@ -1,0 +1,2 @@
+# Signed test bytes must survive Windows checkouts unchanged.
+/src-tauri/src/app_update/fixtures/payload.txt -text

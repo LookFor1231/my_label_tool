@@ -85,10 +85,18 @@ pub async fn download_prelabel_model_task(
 ) -> Result<Option<ModelDownloadResult>, String> {
     let handle = Arc::new(AsyncCancellation::new());
     model_download_tasks().register(&download_id, Arc::clone(&handle))?;
-    let outcome = match managed_models_directory(&app) {
-        Ok(directory) => download_model_file(&directory, &handle, &source_url, on_progress).await,
-        Err(error) => Err(error),
-    };
+    let outcome = async {
+        // Register before potentially slow adapter-backed settings reads, so an early
+        // cancellation still prevents the download when configuration loading finishes.
+        let proxy = crate::github_proxy::load_for_request(app.clone()).await?;
+        match managed_models_directory(&app) {
+            Ok(directory) => {
+                download_model_file(&directory, &handle, &source_url, &proxy, on_progress).await
+            }
+            Err(error) => Err(error),
+        }
+    }
+    .await;
     model_download_tasks().remove(&download_id);
     outcome
 }
@@ -99,6 +107,7 @@ async fn download_model_file(
     directory: &Path,
     handle: &AsyncCancellation,
     source_url: &str,
+    proxy: &crate::github_proxy::Settings,
     on_progress: Channel<ModelDownloadEvent>,
 ) -> Result<Option<ModelDownloadResult>, String> {
     if handle.is_cancelled() {
@@ -112,6 +121,7 @@ async fn download_model_file(
         HttpDownload {
             handle,
             url: source_url.trim(),
+            proxy,
             timeouts: DOWNLOAD_TIMEOUTS,
             max_bytes: Some(MAX_MODEL_DOWNLOAD_BYTES),
             timed_out: || text::model_download_timed_out(&file_name),
@@ -336,6 +346,29 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn model_gateway_validates_and_installs_without_renaming_the_source() {
+        let sample = sample_onnx();
+        let (settings, server) = crate::github_proxy::test_support::gateway(
+            sample.clone(),
+            "/gateway/owner/models/releases/download/V1/fixture.onnx",
+        );
+        let directory = tempfile::tempdir().unwrap();
+        let result = download_model_file(
+            directory.path(),
+            &AsyncCancellation::new(),
+            "https://github.com/owner/models/releases/download/V1/fixture.onnx",
+            &settings,
+            tauri::ipc::Channel::new(|_| Ok(())),
+        )
+        .await
+        .unwrap()
+        .unwrap();
+        server.join().unwrap();
+        assert_eq!(fs::read(&result.path).unwrap(), sample);
+        assert!(result.path.ends_with("fixture.onnx"));
+    }
+
+    #[tokio::test]
     async fn downloads_validates_and_installs_the_model() {
         let sample = sample_onnx();
         let url = serve_bytes(sample.clone());
@@ -345,6 +378,9 @@ mod tests {
             &directory,
             &AsyncCancellation::new(),
             &url,
+            &crate::github_proxy::Settings {
+                url: "http://127.0.0.1:1/unreachable".into(),
+            },
             tauri::ipc::Channel::new(|_message| Ok(())),
         )
         .await
@@ -378,6 +414,7 @@ mod tests {
             &directory,
             &AsyncCancellation::new(),
             &url,
+            &Default::default(),
             tauri::ipc::Channel::new(|_message| Ok(())),
         )
         .await
@@ -407,6 +444,7 @@ mod tests {
             &directory,
             &AsyncCancellation::new(),
             &url,
+            &Default::default(),
             tauri::ipc::Channel::new(|_message| Ok(())),
         )
         .await
@@ -474,6 +512,7 @@ mod tests {
             &directory,
             &handle,
             "https://example.com/yolo11n.onnx",
+            &Default::default(),
             tauri::ipc::Channel::new(|_message| Ok(())),
         )
         .await

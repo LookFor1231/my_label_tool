@@ -1,4 +1,7 @@
 //! Machine-local resource gateway configuration. No plugin or project access.
+pub mod routing;
+#[cfg(test)]
+pub(crate) mod test_support;
 use crate::i18n::zh_cn as text;
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
@@ -47,6 +50,12 @@ pub fn load(app: &tauri::AppHandle) -> Result<Settings, String> {
             .map_err(text::github_proxy_failed)?
             .join("github-proxy.json"),
     )
+}
+
+pub async fn load_for_request(app: tauri::AppHandle) -> Result<Settings, String> {
+    tauri::async_runtime::spawn_blocking(move || load(&app))
+        .await
+        .map_err(text::github_proxy_failed)?
 }
 
 pub fn save(app: &tauri::AppHandle, settings: Settings) -> Result<Settings, String> {

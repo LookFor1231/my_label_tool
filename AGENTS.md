@@ -148,6 +148,7 @@ my_label_tool/
 | --- | --- |
 | `list_image_files` | 列出文件夹下可加载图片（校验扩展名 + 文件头签名，跳过空文件） |
 | `load_github_proxy_settings` / `save_github_proxy_settings` | 宿主专用 GitHub 资源代理入口配置，本机持久化、不进入项目、不向插件或 MCP HTTP 开放，见 docs/github-proxy.md |
+| `check_app_update` / `prepare_app_update_download` | 宿主专用更新检查与下载准备；缓存原始版本资源，每次下载按最新 GitHub 代理设置生成独立资源，签名校验与安装仍由更新器执行，不向插件或 MCP HTTP 开放 |
 | `mcp_poll` / `mcp_resolve` / `mcp_token` / `mcp_configure` | 宿主 MCP 桥接、持久令牌与监听设置；HTTP 仅开放 docs/mcp-tools.json 的领域工具，不能调用 Tauri commands |
 | `mcp_set_authority` / `mcp_prepare_output` / `mcp_commit_output` / `mcp_discard_output` | 宿主 MCP 租约镜像、输出暂存与提交/取消；只接受前端确认的目标，不向 HTTP 客户端或插件开放路径接口 |
 | `generate_image_thumbnail` | 宿主专用：按需生成 ≤256px 长边缩略图并缓存（键 = 路径/mtime/大小哈希），返回缓存路径；不向插件开放 |

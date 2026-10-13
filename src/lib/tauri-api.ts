@@ -1,5 +1,14 @@
 import { useOperations } from "../store/useOperations";
 import type { GitHubProxySettings } from "../types/github-proxy";
+import type { AppUpdateMetadata } from "../types/app-update";
+
+export function checkAppUpdateMetadata(): Promise<AppUpdateMetadata | null> {
+  return invoke("check_app_update");
+}
+
+export function prepareAppUpdateDownload(rid: number): Promise<AppUpdateMetadata> {
+  return invoke("prepare_app_update_download", { rid });
+}
 
 export function loadGitHubProxySettings(): Promise<GitHubProxySettings> {
   return invoke("load_github_proxy_settings");

@@ -185,6 +185,7 @@ async fn download_runtime_assets(
         return Ok(cancelled_outcome());
     }
     let target_directory = runtime_directory(&app)?;
+    let proxy = crate::github_proxy::load_for_request(app.clone()).await?;
     let mut files = Vec::with_capacity(RUNTIME_ASSETS.len());
     for asset in RUNTIME_ASSETS {
         if handle.is_cancelled() {
@@ -193,7 +194,7 @@ async fn download_runtime_assets(
         let _ = on_progress.send(RuntimeDownloadEvent::Started {
             file_name: asset.file_name,
         });
-        let some_bytes = download_checked_asset(handle, asset, on_progress.clone()).await?;
+        let some_bytes = download_checked_asset(handle, asset, &proxy, on_progress.clone()).await?;
         let Some(bytes) = some_bytes else {
             return Ok(cancelled_outcome());
         };
@@ -345,12 +346,20 @@ pub(crate) fn ensure_runtime_available(directory: &Path) -> Result<(), String> {
 async fn download_checked_asset(
     handle: &AsyncCancellation,
     asset: &RuntimeAsset,
+    proxy: &crate::github_proxy::Settings,
     on_progress: Channel<RuntimeDownloadEvent>,
 ) -> Result<Option<Vec<u8>>, String> {
     let url = format!("{RELEASE_BASE_URL}/{}", asset.file_name);
-    download_checked_asset_from_url(handle, asset, &url, DOWNLOAD_TIMEOUTS, move |event| {
-        let _ = on_progress.send(event);
-    })
+    download_checked_asset_from_url(
+        handle,
+        asset,
+        &url,
+        proxy,
+        DOWNLOAD_TIMEOUTS,
+        move |event| {
+            let _ = on_progress.send(event);
+        },
+    )
     .await
 }
 
@@ -358,6 +367,7 @@ async fn download_checked_asset_from_url<F>(
     handle: &AsyncCancellation,
     asset: &RuntimeAsset,
     url: &str,
+    proxy: &crate::github_proxy::Settings,
     timeouts: DownloadTimeouts,
     on_progress: F,
 ) -> Result<Option<Vec<u8>>, String>
@@ -369,6 +379,7 @@ where
         HttpDownload {
             handle,
             url,
+            proxy,
             timeouts,
             max_bytes: None,
             timed_out: || text::runtime_download_timed_out(file_name),
@@ -396,6 +407,7 @@ where
 pub(crate) struct HttpDownload<'a, T, M> {
     pub handle: &'a AsyncCancellation,
     pub url: &'a str,
+    pub proxy: &'a crate::github_proxy::Settings,
     pub timeouts: DownloadTimeouts,
     /// Hard cap on the buffered body; `None` means unlimited, which is only appropriate for
     /// SHA-verified payloads.
@@ -412,14 +424,15 @@ where
     M: Fn(reqwest::Error) -> String + Copy,
 {
     async fn send(&self) -> Result<Option<reqwest::Response>, String> {
-        let client = reqwest::Client::builder()
-            .connect_timeout(self.timeouts.connect)
+        let route = self.proxy.route(self.url)?;
+        let client = route
+            .client(reqwest::Client::builder().connect_timeout(self.timeouts.connect))
             .build()
             .map_err(self.map_error)?;
         tokio::select! {
             biased;
             _ = self.handle.cancelled() => Ok(None),
-            send = tokio::time::timeout(self.timeouts.headers, client.get(self.url).send()) => {
+            send = tokio::time::timeout(self.timeouts.headers, client.get(route.url).send()) => {
                 send.map_err(|_| (self.timed_out)())?
                     .map_err(self.map_error)?
                     .error_for_status()
@@ -590,6 +603,10 @@ pub fn cancel_download(
 }
 
 #[cfg(test)]
+#[path = "runtime_download_gateway_tests.rs"]
+mod gateway_tests;
+
+#[cfg(test)]
 mod tests {
     use std::{
         fs,
@@ -707,6 +724,7 @@ mod tests {
             &AsyncCancellation::new(),
             &test_asset(),
             &url,
+            &Default::default(),
             short_timeouts(),
             |_| {},
         )
@@ -726,10 +744,16 @@ mod tests {
             wake.cancel();
             thread::sleep(Duration::from_millis(150));
         });
-        let outcome =
-            download_checked_asset_from_url(&handle, &test_asset(), &url, short_timeouts(), |_| {})
-                .await
-                .unwrap();
+        let outcome = download_checked_asset_from_url(
+            &handle,
+            &test_asset(),
+            &url,
+            &Default::default(),
+            short_timeouts(),
+            |_| {},
+        )
+        .await
+        .unwrap();
         server.join().unwrap();
 
         assert!(outcome.is_none());
@@ -749,6 +773,7 @@ mod tests {
             &AsyncCancellation::new(),
             &test_asset(),
             &url,
+            &Default::default(),
             short_timeouts(),
             |_| {},
         )
@@ -772,10 +797,16 @@ mod tests {
             wake.cancel();
             thread::sleep(Duration::from_millis(150));
         });
-        let outcome =
-            download_checked_asset_from_url(&handle, &test_asset(), &url, short_timeouts(), |_| {})
-                .await
-                .unwrap();
+        let outcome = download_checked_asset_from_url(
+            &handle,
+            &test_asset(),
+            &url,
+            &Default::default(),
+            short_timeouts(),
+            |_| {},
+        )
+        .await
+        .unwrap();
         server.join().unwrap();
 
         assert!(outcome.is_none());

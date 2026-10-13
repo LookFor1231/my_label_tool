@@ -1,4 +1,5 @@
 pub mod acp;
+mod app_update;
 mod commands;
 mod github_proxy;
 mod i18n;
@@ -38,6 +39,8 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            commands::check_app_update,
+            commands::prepare_app_update_download,
             commands::load_github_proxy_settings,
             commands::save_github_proxy_settings,
             commands::mcp_poll,

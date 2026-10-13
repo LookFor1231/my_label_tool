@@ -992,3 +992,4 @@ pub const GITHUB_PROXY_URL_INVALID: &str = "请输入有效的 HTTP/HTTPS 资源
 pub fn github_proxy_failed(error: impl std::fmt::Display) -> String {
     format!("GitHub 代理设置失败：{error}")
 }
+pub use super::update_zh_cn::*;

@@ -1,6 +1,6 @@
-import type { DownloadEvent, Update } from "@tauri-apps/plugin-updater";
-import { check } from "@tauri-apps/plugin-updater";
+import { Update, type DownloadEvent } from "@tauri-apps/plugin-updater";
 import { relaunch } from "@tauri-apps/plugin-process";
+import { checkAppUpdateMetadata, prepareAppUpdateDownload } from "./tauri-api";
 
 export type AppUpdateStatus =
   "idle" | "checking" | "available" | "not-available" | "downloading" | "installed" | "error";
@@ -11,8 +11,9 @@ export interface AppUpdateProgress {
   percent: number | null;
 }
 
-export function checkAppUpdate(): Promise<Update | null> {
-  return check();
+export async function checkAppUpdate(): Promise<Update | null> {
+  const metadata = await checkAppUpdateMetadata();
+  return metadata ? new Update({ ...metadata, body: metadata.body ?? undefined }) : null;
 }
 
 export async function installAppUpdate(
@@ -23,9 +24,13 @@ export async function installAppUpdate(
 ): Promise<boolean> {
   let downloaded = 0;
   let total: number | null = null;
+  let download: Update | undefined;
 
   try {
-    await update.download((event: DownloadEvent) => {
+    const metadata = await prepareAppUpdateDownload(update.rid);
+    download = new Update({ ...metadata, body: metadata.body ?? undefined });
+    if (isCancelled()) return false;
+    await download.download((event: DownloadEvent) => {
       if (event.event === "Started") {
         downloaded = 0;
         total = event.data.contentLength ?? null;
@@ -39,16 +44,16 @@ export async function installAppUpdate(
         percent: total && total > 0 ? Math.min(100, Math.round((downloaded / total) * 100)) : null,
       });
     });
+    if (isCancelled()) return false;
+    onInstalling();
+    await download.install();
+    await relaunch();
+    return true;
   } catch (error) {
     if (isCancelled()) return false;
     throw error;
+  } finally {
+    // The cached original remains reusable; release each attempt and its downloaded bytes.
+    await download?.close().catch(() => {});
   }
-
-  if (isCancelled()) {
-    return false;
-  }
-  onInstalling();
-  await update.install();
-  await relaunch();
-  return true;
 }

@@ -1,4 +1,6 @@
 mod acp;
+mod app_update;
+pub use app_update::*;
 mod github_proxy;
 pub use github_proxy::*;
 mod mcp;
