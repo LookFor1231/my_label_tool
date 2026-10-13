@@ -85,7 +85,7 @@ export function OperationStatus({ children }: { children?: ReactNode }) {
                 )}
               </div>
               {op.message && (
-                <p className="mt-1 break-words">
+                <p className="mt-1 whitespace-pre-wrap [overflow-wrap:anywhere]">
                   {op.message}
                   {op.status === "failed" && op.failCount && op.failCount > 1
                     ? text.failureCount(op.failCount)

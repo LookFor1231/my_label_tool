@@ -1,7 +1,7 @@
 import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, expect, it, vi } from "vitest";
-import { OperationStatus } from "../components/operations/OperationStatus";
+import { AppUpdateNotice } from "../components/AppUpdateNotice";
 import { OPERATION_ZH_CN as text } from "../i18n/operations.zh-CN";
 import { useOperations } from "../store/useOperations";
 import { useAppUpdate } from "./useAppUpdate";
@@ -11,6 +11,7 @@ vi.mock("../lib/updater", () => api);
 
 afterEach(() => {
   vi.useRealTimers();
+  vi.clearAllMocks();
   useOperations.setState({ operations: [] });
 });
 
@@ -23,7 +24,7 @@ it("reports an installation failure in exactly one operation card", async () => 
   let update!: ReturnType<typeof useAppUpdate>;
   function Harness() {
     update = useAppUpdate();
-    return <OperationStatus />;
+    return <AppUpdateNotice {...update} />;
   }
   const host = document.createElement("div");
   document.body.append(host);
@@ -40,8 +41,97 @@ it("reports an installation failure in exactly one operation card", async () => 
     expect(failures[0].message).toContain("disk full");
     expect(host.querySelectorAll('[role="alert"]')).toHaveLength(1);
     expect(host.textContent).toContain("disk full");
+    expect(host.textContent?.match(/disk full/g)).toHaveLength(1);
   } finally {
     act(() => root.unmount());
     host.remove();
+  }
+});
+
+it("preserves the full release notes and renders only one download card", async () => {
+  Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
+  vi.useFakeTimers();
+  const body = `### 新功能\n\n- 第一项\n- ${"详细说明".repeat(100)}\n\n最后一项`;
+  api.checkAppUpdate.mockResolvedValue({ version: "2.0.0", currentVersion: "1.0.0", body });
+  let finish!: (installed: boolean) => void;
+  api.installAppUpdate.mockImplementation((_update, progress) => {
+    progress({ downloaded: 12, total: 100, percent: 12 });
+    return new Promise<boolean>((resolve) => {
+      finish = resolve;
+    });
+  });
+  let update!: ReturnType<typeof useAppUpdate>;
+  function Harness() {
+    update = useAppUpdate();
+    return <AppUpdateNotice {...update} />;
+  }
+  const host = document.createElement("div");
+  document.body.append(host);
+  const root = createRoot(host);
+  try {
+    act(() => root.render(<Harness />));
+    await act(async () => update.checkForUpdates());
+    expect(host.textContent).toContain(body);
+    let installing!: Promise<void>;
+    await act(async () => {
+      installing = update.installUpdate();
+    });
+    const region = host.querySelector('[role="region"]')!;
+    expect(region.children).toHaveLength(1);
+    expect(host.querySelectorAll("progress")).toHaveLength(1);
+    expect(host.querySelector("progress")?.value).toBe(12);
+    await act(async () => host.querySelector<HTMLButtonElement>("button")!.click());
+    expect(useOperations.getState().operations[0].cancelRequested).toBe(true);
+    await act(async () => {
+      finish(false);
+      await installing;
+    });
+    expect(region.children).toHaveLength(1);
+    expect(host.textContent?.match(/已取消更新安装/g)).toHaveLength(1);
+  } finally {
+    act(() => root.unmount());
+    host.remove();
+  }
+});
+
+it("keeps installation and restart feedback in the operation card and removes cancellation", async () => {
+  Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
+  vi.useFakeTimers();
+  api.checkAppUpdate.mockResolvedValue({ version: "2.0.0", currentVersion: "1.0.0" });
+  let finish!: (installed: boolean) => void;
+  api.installAppUpdate.mockImplementation((_update, _progress, _cancelled, onInstalling) => {
+    onInstalling();
+    return new Promise<boolean>((resolve) => {
+      finish = resolve;
+    });
+  });
+  let update!: ReturnType<typeof useAppUpdate>;
+  function Harness() {
+    update = useAppUpdate();
+    return <AppUpdateNotice {...update} />;
+  }
+  const host = document.createElement("div");
+  const root = createRoot(host);
+  try {
+    act(() => root.render(<Harness />));
+    await act(async () => update.checkForUpdates());
+    let installing!: Promise<void>;
+    await act(async () => {
+      installing = update.installUpdate();
+    });
+    expect(host.querySelector('[role="region"]')?.children).toHaveLength(1);
+    expect(host.textContent).toContain("正在安装 2.0.0");
+    expect(host.textContent).not.toContain(text.updateCancelHint);
+    expect(host.querySelector("button")).toBeNull();
+    await act(async () => {
+      finish(true);
+      await installing;
+    });
+    expect(update.updateStatus).toBe("installed");
+    expect(host.querySelector('[role="region"]')?.children).toHaveLength(1);
+    expect(host.textContent).toContain("更新已安装，正在重启");
+    expect(host.querySelector("progress")).toBeNull();
+  } finally {
+    act(() => root.unmount());
   }
 });

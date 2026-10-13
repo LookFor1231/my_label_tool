@@ -294,7 +294,6 @@ function App() {
     installUpdate,
     setUpdateMessage,
     updateMessage,
-    updateProgress,
     updateStatus,
   } = useAppUpdate();
   const { shortcuts, updateShortcut } = useShortcutsConfig(setError);
@@ -902,7 +901,6 @@ function App() {
         pluginTemplateSources={pluginTemplateSources}
         transformerRef={transformerRef}
         updateMessage={updateMessage}
-        updateProgress={updateProgress}
         updateStatus={updateStatus}
         usedLabelIds={usedLabelIds}
         cancelLabelChanges={cancelLabelChanges}

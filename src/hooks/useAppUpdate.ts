@@ -1,19 +1,14 @@
 import { tryBeginOperation } from "../store/useOperations";
 import { OPERATION_ZH_CN as operationText } from "../i18n/operations.zh-CN";
+import { UPDATE_ZH_CN as text } from "../i18n/update.zh-CN";
 import { useEffect, useState } from "react";
-import {
-  checkAppUpdate,
-  installAppUpdate,
-  type AppUpdateProgress,
-  type AppUpdateStatus,
-} from "../lib/updater";
+import { checkAppUpdate, installAppUpdate, type AppUpdateStatus } from "../lib/updater";
 import type { Update } from "@tauri-apps/plugin-updater";
 
 export function useAppUpdate() {
   const [pendingUpdate, setPendingUpdate] = useState<Update | null>(null);
   const [updateStatus, setUpdateStatus] = useState<AppUpdateStatus>("idle");
   const [updateMessage, setUpdateMessage] = useState("");
-  const [updateProgress, setUpdateProgress] = useState<AppUpdateProgress | null>(null);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -29,9 +24,8 @@ export function useAppUpdate() {
     }
 
     setUpdateStatus("checking");
-    setUpdateProgress(null);
     if (!silent) {
-      setUpdateMessage("正在检查更新...");
+      setUpdateMessage(text.checking);
     }
 
     try {
@@ -40,26 +34,19 @@ export function useAppUpdate() {
 
       if (!update) {
         setUpdateStatus(silent ? "idle" : "not-available");
-        setUpdateMessage(silent ? "" : "已是最新版本。");
+        setUpdateMessage(silent ? "" : text.latest);
         return;
       }
 
       setUpdateStatus("available");
       setUpdateMessage(
-        `发现新版本 ${update.version}，当前版本 ${update.currentVersion}。${summarizeUpdateBody(
-          update.body,
-        )}`,
+        text.available(update.version, update.currentVersion) +
+          (update.body?.trim() ? `\n\n${text.releaseNotes}\n${update.body}` : ""),
       );
     } catch (caughtError: unknown) {
       setPendingUpdate(null);
       setUpdateStatus(silent ? "idle" : "error");
-      setUpdateMessage(
-        silent
-          ? ""
-          : `检查更新失败：${
-              caughtError instanceof Error ? caughtError.message : String(caughtError)
-            }`,
-      );
+      setUpdateMessage(silent ? "" : text.checkFailed(caughtError));
     }
   }
 
@@ -74,41 +61,44 @@ export function useAppUpdate() {
       resource: "app-update",
       cancel: () => {
         cancelled = true;
-        setUpdateMessage(operationText.updateCancelled);
+        operation?.progress(null, text.cancelling);
       },
     });
     if (!operation) return;
-    operation.progress(null, operationText.updateCancelHint);
+    const downloadMessage = (percent: number | null) =>
+      `${text.downloading(pendingUpdate.version, percent)}\n${operationText.updateCancelHint}`;
+    operation.progress(null, downloadMessage(null));
     setUpdateStatus("downloading");
-    setUpdateMessage(`正在下载并安装 ${pendingUpdate.version}...`);
+    // Download progress and terminal messages belong exclusively to the operation card.
+    setUpdateMessage("");
 
     try {
       const installed = await installAppUpdate(
         pendingUpdate,
         (progress) => {
-          setUpdateProgress(progress);
-          operation.progress(progress.percent);
+          operation.progress(
+            progress.percent,
+            cancelled ? text.cancelling : downloadMessage(progress.percent),
+          );
         },
         () => cancelled,
-        () => operation.setCancel(),
+        () => {
+          operation.setCancel();
+          operation.progress(null, text.installing(pendingUpdate.version));
+        },
       );
       if (!installed) {
         operation.complete(operationText.updateCancelled, "warning");
         setPendingUpdate(null);
         setUpdateStatus("idle");
-        setUpdateMessage(operationText.updateCancelled);
         return;
       }
-      operation.complete();
+      operation.complete(text.installed);
       setUpdateStatus("installed");
-      setUpdateMessage("更新已安装，正在重启...");
     } catch (caughtError: unknown) {
-      const message = `安装更新失败：${
-        caughtError instanceof Error ? caughtError.message : String(caughtError)
-      }`;
+      const message = text.installFailed(caughtError);
       operation.fail(message);
       setUpdateStatus("error");
-      setUpdateMessage(message);
     }
   }
 
@@ -117,16 +107,6 @@ export function useAppUpdate() {
     installUpdate,
     setUpdateMessage,
     updateMessage,
-    updateProgress,
     updateStatus,
   };
-}
-
-function summarizeUpdateBody(body?: string) {
-  const summary = body?.replace(/\s+/g, " ").trim();
-  if (!summary) {
-    return "";
-  }
-
-  return ` 发布说明：${summary.length > 160 ? `${summary.slice(0, 160)}...` : summary}`;
 }
