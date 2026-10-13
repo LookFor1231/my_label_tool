@@ -2,6 +2,13 @@ const reason = (error: unknown) => (error instanceof Error ? error.message : Str
 
 export const UPDATE_ZH_CN = {
   title: "自动更新",
+  check: "检查更新",
+  updateTo: (version: string) => `更新到 V${version.replace(/^[vV]/, "")}`,
+  version: (version: string) => `V${version.replace(/^[vV]/, "")}`,
+  currentVersion: (version: string) => `当前版本 V${version.replace(/^[vV]/, "")}`,
+  ready: "新版本已就绪",
+  noReleaseNotes: "此版本暂无更新说明。",
+  restartHint: "更新安装后将重启软件。",
   found: "发现更新",
   failed: "更新失败",
   dismiss: "关闭更新提示",

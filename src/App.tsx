@@ -290,6 +290,10 @@ function App() {
       setImageView,
     });
   const {
+    pendingUpdate,
+    isUpdateOpen,
+    closeUpdateDialog,
+    openUpdateDialog,
     checkForUpdates,
     installUpdate,
     setUpdateMessage,
@@ -900,6 +904,10 @@ function App() {
         pluginTemplateIds={pluginTemplateIds}
         pluginTemplateSources={pluginTemplateSources}
         transformerRef={transformerRef}
+        pendingUpdate={pendingUpdate}
+        isUpdateOpen={isUpdateOpen}
+        closeUpdateDialog={closeUpdateDialog}
+        openUpdateDialog={openUpdateDialog}
         updateMessage={updateMessage}
         updateStatus={updateStatus}
         usedLabelIds={usedLabelIds}

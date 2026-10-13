@@ -208,6 +208,19 @@ describe("image deletion entry wiring", () => {
     expect(document.querySelector('[role="alert"]')).toBeNull();
     await act(async () => handle.complete());
   });
+  it("keeps the cached update below check updates and reopens its dialog without a request", async () => {
+    await openFixture();
+    vi.mocked(checkAppUpdate).mockResolvedValueOnce({
+      version: "2.0.0", currentVersion: "1.0.0", body: "### 新功能\n- 更新说明", close: vi.fn().mockResolvedValue(undefined),
+    } as unknown as NonNullable<Awaited<ReturnType<typeof checkAppUpdate>>>);
+    await click("检查更新");
+    expect(document.querySelector('[role="dialog"]')?.textContent).toContain("V2.0.0");
+    await click("稍后");
+    const calls = vi.mocked(checkAppUpdate).mock.calls.length;
+    await click("更新到 V2.0.0");
+    expect(document.querySelector('[role="dialog"]')?.textContent).toContain("更新说明");
+    expect(vi.mocked(checkAppUpdate).mock.calls.length).toBe(calls);
+  });
   it("list context menu targets the clicked file without changing the selected image; F8 targets current", async () => {
     await openFixture();
     expect(button("a.png").className).toContain("bg-sky-500");

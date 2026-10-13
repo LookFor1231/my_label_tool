@@ -18,7 +18,7 @@ it("never installs or relaunches when cancellation is requested during transfer"
   expect(progress).toHaveBeenLastCalledWith({ downloaded: 10, total: 20, percent: 50 });
   expect(update.install).not.toHaveBeenCalled();
   expect(relaunch).not.toHaveBeenCalled();
-  expect(update.close).toHaveBeenCalledOnce();
+  expect(update.close).not.toHaveBeenCalled();
 });
 it("turns off cancellation before installation and then relaunches", async () => {
   const order: string[] = [];
@@ -42,7 +42,7 @@ it("turns off cancellation before installation and then relaunches", async () =>
   expect(relaunch).toHaveBeenCalledOnce();
 });
 
-it("closes a rejected transfer and reports cancellation only when it was requested", async () => {
+it("preserves a rejected transfer for retry and reports cancellation only when it was requested", async () => {
   vi.mocked(relaunch).mockClear();
   const update = {
     download: vi.fn().mockRejectedValue(new Error("offline")),
@@ -52,9 +52,9 @@ it("closes a rejected transfer and reports cancellation only when it was request
   await expect(installAppUpdate(update as unknown as Update, vi.fn(), () => true)).resolves.toBe(
     false,
   );
-  expect(update.close).toHaveBeenCalledOnce();
+  expect(update.close).not.toHaveBeenCalled();
   expect(update.install).not.toHaveBeenCalled();
   expect(relaunch).not.toHaveBeenCalled();
   await expect(installAppUpdate(update as unknown as Update, vi.fn())).rejects.toThrow("offline");
-  expect(update.close).toHaveBeenCalledTimes(2);
+  expect(update.close).not.toHaveBeenCalled();
 });

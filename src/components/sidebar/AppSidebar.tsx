@@ -29,7 +29,11 @@ import type { LoadedProjectVideo } from "../../lib/project-media";
 import { ProjectMediaList } from "./ProjectMediaList";
 import { VIDEO_ZH_CN as videoText } from "../../i18n/video.zh-CN";
 
+import { UPDATE_ZH_CN as updateText } from "../../i18n/update.zh-CN";
+
 interface AppSidebarProps {
+  pendingVersion?: string;
+  openUpdateDialog?: () => void;
   footer?: ReactNode;
   busy?: boolean;
   labelSamples?: LabelSamples;
@@ -96,6 +100,8 @@ interface AppSidebarProps {
 }
 
 export function AppSidebar({
+  pendingVersion,
+  openUpdateDialog,
   footer,
   busy = false,
   labelSamples,
@@ -308,8 +314,25 @@ export function AppSidebar({
                       checkForUpdates();
                     }}
                   >
-                    检查更新
+                    {updateText.check}
                   </button>
+                  {pendingVersion && (
+                    <button
+                      type="button"
+                      disabled={
+                        updateStatus === "checking" ||
+                        updateStatus === "downloading" ||
+                        updateStatus === "installed"
+                      }
+                      onClick={() => {
+                        closeMenu();
+                        openUpdateDialog?.();
+                      }}
+                      className="w-full rounded border border-sky-500/40 bg-sky-500/10 px-3 py-2 text-left text-sm font-medium text-sky-300 hover:bg-sky-500/20 disabled:cursor-wait disabled:opacity-60"
+                    >
+                      {updateText.updateTo(pendingVersion)}
+                    </button>
+                  )}
                 </div>
               </Overlay>
             )}
@@ -378,7 +401,15 @@ export function AppSidebar({
         >
           {PRELABEL_ZH_CN.executionTitle}
         </button>
-        <button className="mt-2 w-full rounded border border-slate-600 px-3 py-2 text-sm text-slate-200 hover:bg-slate-800" onClick={() => { setHasOpenedScript(true); setIsScriptOpen(true); }}>{scriptText.title}</button>
+        <button
+          className="mt-2 w-full rounded border border-slate-600 px-3 py-2 text-sm text-slate-200 hover:bg-slate-800"
+          onClick={() => {
+            setHasOpenedScript(true);
+            setIsScriptOpen(true);
+          }}
+        >
+          {scriptText.title}
+        </button>
       </section>
 
       <div className={`scrollbar-dark min-h-0 max-h-[45vh] overflow-y-auto ${busyClass}`}>
@@ -560,7 +591,9 @@ export function AppSidebar({
           onClose={() => setIsPluginSettingsOpen(false)}
         />
       )}
-      {hasOpenedScript && <ScriptPanel open={isScriptOpen} labels={labels} onClose={() => setIsScriptOpen(false)} />}
+      {hasOpenedScript && (
+        <ScriptPanel open={isScriptOpen} labels={labels} onClose={() => setIsScriptOpen(false)} />
+      )}
     </aside>
   );
 }

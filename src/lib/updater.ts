@@ -40,13 +40,11 @@ export async function installAppUpdate(
       });
     });
   } catch (error) {
-    await update.close();
     if (isCancelled()) return false;
     throw error;
   }
 
   if (isCancelled()) {
-    await update.close();
     return false;
   }
   onInstalling();

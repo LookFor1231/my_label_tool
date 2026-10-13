@@ -148,6 +148,10 @@ interface AppLayoutProps {
   pluginPrelabelSources: PluginPrelabelSourceDescriptor[];
   pluginExportProgress: PluginExportProgressState | null;
   transformerRef: MutableRefObject<KonvaTransformer | null>;
+  pendingUpdate: import("./AppUpdateDialog").AppUpdateDialogProps["pendingUpdate"];
+  isUpdateOpen: boolean;
+  closeUpdateDialog: () => void;
+  openUpdateDialog: () => void;
   updateMessage: string;
   updateStatus: AppUpdateStatus;
   usedLabelIds: Set<string>;
@@ -290,6 +294,10 @@ export function AppLayout({
   pluginPrelabelSources,
   pluginExportProgress,
   transformerRef,
+  pendingUpdate,
+  isUpdateOpen,
+  closeUpdateDialog,
+  openUpdateDialog,
   updateMessage,
   updateStatus,
   usedLabelIds,
@@ -490,6 +498,8 @@ export function AppLayout({
           setSelectedPath={setSelectedPath}
           undo={undo}
           updateLabels={updateLabels}
+          pendingVersion={pendingUpdate?.version}
+          openUpdateDialog={openUpdateDialog}
           updateStatus={updateStatus}
         />
 
@@ -727,6 +737,9 @@ export function AppLayout({
       )}
 
       <AppUpdateNotice
+        pendingUpdate={pendingUpdate}
+        isUpdateOpen={isUpdateOpen}
+        closeUpdateDialog={closeUpdateDialog}
         updateMessage={updateMessage}
         updateStatus={updateStatus}
         setUpdateMessage={setUpdateMessage}
