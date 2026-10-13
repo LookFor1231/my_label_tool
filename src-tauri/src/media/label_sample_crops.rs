@@ -2,7 +2,7 @@
 //! label draft. Gallery previews do not create files.
 use crate::i18n::zh_cn as text;
 use base64::Engine;
-use image::{DynamicImage, ImageFormat, ImageReader};
+use image::{DynamicImage, ImageDecoder, ImageFormat, ImageReader};
 use serde::{Deserialize, Serialize};
 use std::{
     collections::HashSet,
@@ -54,8 +54,21 @@ fn crop(folder: &Path, path: &Path, bounds: CropBounds) -> Result<DynamicImage, 
     limits.max_image_width = Some(16384);
     limits.max_image_height = Some(16384);
     limits.max_alloc = Some(128 * 1024 * 1024);
-    reader.limits(limits);
-    let image = reader.decode().map_err(text::label_sample_error)?;
+    reader.limits(limits.clone());
+    let mut decoder = reader.into_decoder().map_err(text::label_sample_error)?;
+    // Preserve ImageReader::decode's output-buffer budget when using the decoder
+    // directly to read orientation metadata.
+    limits
+        .reserve(decoder.total_bytes())
+        .map_err(text::label_sample_error)?;
+    decoder
+        .set_limits(limits)
+        .map_err(text::label_sample_error)?;
+    let orientation = decoder.orientation().map_err(text::label_sample_error)?;
+    let mut image = DynamicImage::from_decoder(decoder).map_err(text::label_sample_error)?;
+    // The WebView canvas displays EXIF-oriented pixels; annotation bounds belong
+    // to that same coordinate system. Orient before clipping, including mirrors.
+    image.apply_orientation(orientation);
     let left = bounds.x.floor().clamp(0.0, image.width() as f64) as u32;
     let top = bounds.y.floor().clamp(0.0, image.height() as f64) as u32;
     let right = (bounds.x + bounds.width)
