@@ -491,7 +491,7 @@ impl Drop for ProxyWorkerLease {
 
 fn reserve_proxy_worker() -> Result<(), ProxyDispatchError> {
     ACTIVE_PROXY_WORKERS
-        .fetch_update(Ordering::AcqRel, Ordering::Acquire, |active| {
+        .try_update(Ordering::AcqRel, Ordering::Acquire, |active| {
             (active < MAX_PROXY_WORKERS).then_some(active + 1)
         })
         .map(|_| ())
