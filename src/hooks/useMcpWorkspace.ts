@@ -34,7 +34,7 @@ export function useMcpWorkspace(context: McpContext) {
   useEffect(() => {
     const tick = setInterval(() => controller.control.tick(), 200);
     function block(event: KeyboardEvent) {
-      // Keep the control bar keyboard-accessible while rejecting application shortcuts.
+      // Keep the sidebar MCP controls keyboard-accessible while rejecting application shortcuts.
       if (
         controller.control.state.mode === "mcp" &&
         useOverlayStore.getState().depth() === 0 &&
@@ -52,7 +52,38 @@ export function useMcpWorkspace(context: McpContext) {
     };
   }, [controller]);
   useEffect(() => {
-    if (gateRef.current) gateRef.current.inert = control.mode === "mcp";
+    const root = gateRef.current;
+    if (!root || control.mode !== "mcp") return;
+    const disabled = new Map<HTMLElement, boolean>();
+    function restore() {
+      disabled.forEach((inert, element) => {
+        element.inert = inert;
+      });
+      disabled.clear();
+    }
+    function disable(element: HTMLElement) {
+      if (element.matches("[data-mcp-control]")) return;
+      if (element.querySelector("[data-mcp-control]")) {
+        Array.from(element.children).forEach((child) => {
+          if (child instanceof HTMLElement) disable(child);
+        });
+      } else {
+        disabled.set(element, element.inert);
+        element.inert = true;
+      }
+    }
+    function refresh() {
+      restore();
+      if (root) disable(root);
+    }
+    refresh();
+    // Preserve the MCP entry while also gating UI mounted during remote control.
+    const observer = new MutationObserver(refresh);
+    observer.observe(root, { childList: true, subtree: true });
+    return () => {
+      observer.disconnect();
+      restore();
+    };
   }, [control.mode]);
   return { ...connection, controller, control, gateRef };
 }

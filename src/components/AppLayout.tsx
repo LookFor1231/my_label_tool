@@ -80,6 +80,7 @@ const ImageSearchDialog = lazy(async () => {
 });
 
 interface AppLayoutProps {
+  sidebarFooter?: ReactNode;
   labelSamples?: LabelSamples;
   reextractVideo?: (source: string) => void;
   openProjectSettings?: () => void;
@@ -223,6 +224,7 @@ interface AppLayoutProps {
 }
 
 export function AppLayout({
+  sidebarFooter,
   labelSamples,
   reextractVideo,
   openProjectSettings,
@@ -426,10 +428,10 @@ export function AppLayout({
 
   return (
     <main className="flex h-full flex-col overflow-hidden bg-slate-950 text-slate-100">
-      <div
-        className={`flex min-h-0 flex-1 ${annotationsBusy ? "pointer-events-none opacity-60" : ""}`}
-      >
+      <div className="flex min-h-0 flex-1">
         <AppSidebar
+          footer={sidebarFooter}
+          busy={annotationsBusy}
           labelSamples={labelSamples}
           reextractVideo={reextractVideo}
           openProjectSettings={openProjectSettings}
@@ -493,7 +495,9 @@ export function AppLayout({
           updateStatus={updateStatus}
         />
 
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+        <div
+          className={`flex min-h-0 min-w-0 flex-1 flex-col ${annotationsBusy ? "pointer-events-none opacity-60" : ""}`}
+        >
           <div
             ref={canvasHostRef}
             className={`relative min-h-0 min-w-0 flex-1 overflow-hidden bg-slate-950 ${isPanning ? "cursor-grabbing" : spacePanActive ? "cursor-grab" : canvasCursorClass}`}

@@ -4,7 +4,7 @@ import { ScriptPanel } from "../settings/ScriptPanel";
 import { SCRIPT_ZH_CN as scriptText } from "../../i18n/script.zh-CN";
 import { Overlay } from "../overlay/Overlay";
 import { INTERACTION_ZH_CN as interactionText } from "../../i18n/interaction.zh-CN";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { ExportPanel } from "../settings/ExportPanel";
 import { ImageListContextMenu } from "./ImageListContextMenu";
 import { LabelSettings } from "../settings/LabelSettings";
@@ -30,6 +30,8 @@ import { ProjectMediaList } from "./ProjectMediaList";
 import { VIDEO_ZH_CN as videoText } from "../../i18n/video.zh-CN";
 
 interface AppSidebarProps {
+  footer?: ReactNode;
+  busy?: boolean;
   labelSamples?: LabelSamples;
   reextractVideo?: (source: string) => void;
   openProjectSettings?: () => void;
@@ -94,6 +96,8 @@ interface AppSidebarProps {
 }
 
 export function AppSidebar({
+  footer,
+  busy = false,
   labelSamples,
   reextractVideo,
   openProjectSettings,
@@ -172,6 +176,7 @@ export function AppSidebar({
     isLabelCompatibleWithShape(label, currentShapeType),
   );
   const currentToolLabels = compatibleCurrentLabels.length > 0 ? compatibleCurrentLabels : labels;
+  const busyClass = busy ? "pointer-events-none opacity-60" : "";
 
   function closeMenu() {
     setMenuAnchor(null);
@@ -179,7 +184,7 @@ export function AppSidebar({
 
   return (
     <aside className="flex h-full w-72 shrink-0 flex-col border-r border-slate-800 bg-slate-900">
-      <div className="shrink-0 border-b border-slate-800 p-4">
+      <div className={`shrink-0 border-b border-slate-800 p-4 ${busyClass}`}>
         <div className="flex items-center justify-between gap-2">
           <h1 className="truncate text-lg font-semibold">my_label_tool</h1>
           <div className="relative">
@@ -376,7 +381,7 @@ export function AppSidebar({
         <button className="mt-2 w-full rounded border border-slate-600 px-3 py-2 text-sm text-slate-200 hover:bg-slate-800" onClick={() => { setHasOpenedScript(true); setIsScriptOpen(true); }}>{scriptText.title}</button>
       </section>
 
-      <div className="scrollbar-dark min-h-0 max-h-[45vh] overflow-y-auto">
+      <div className={`scrollbar-dark min-h-0 max-h-[45vh] overflow-y-auto ${busyClass}`}>
         <LabelSettings
           samples={labelSamples}
           canSaveTemplate={
@@ -463,7 +468,9 @@ export function AppSidebar({
         </section>
       </div>
 
-      <section className="flex min-h-44 flex-1 flex-col border-t border-slate-800 bg-slate-900">
+      <section
+        className={`flex min-h-44 flex-1 flex-col border-t border-slate-800 bg-slate-900 ${busyClass}`}
+      >
         <div className="border-b border-slate-800 px-4 py-2">
           <div className="flex items-center justify-between gap-2">
             <h2 className="text-sm font-semibold text-slate-200">{videoText.mediaList}</h2>
@@ -523,6 +530,7 @@ export function AppSidebar({
           onImageMenu={(image, x, y) => setImageMenu({ image, x, y })}
         />
       </section>
+      {footer}
       {imageMenu && images.includes(imageMenu.image) && (
         <ImageListContextMenu
           {...imageMenu}

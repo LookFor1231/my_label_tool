@@ -8,9 +8,11 @@ import { selectExportFolder } from "../../lib/tauri-api";
 export function McpControlBar({
   controller,
   state,
+  onApprove,
 }: {
   controller: McpController;
   state: McpControlState;
+  onApprove: (permissions: McpPermission[]) => void;
 }) {
   const [minutes, setMinutes] = useState<number>(MCP_LIMITS.lockMinutes);
   const [error, setError] = useState("");
@@ -95,9 +97,7 @@ export function McpControlBar({
           <button
             className={`${button} border-emerald-600`}
             onClick={() =>
-              perform(() =>
-                controller.approve(state.permissions.filter((p) => !excluded.includes(p))),
-              )
+              perform(() => onApprove(state.permissions.filter((p) => !excluded.includes(p))))
             }
           >
             {text.approve}

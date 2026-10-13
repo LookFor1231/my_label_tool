@@ -7,6 +7,7 @@ import type { KonvaEventObject } from "konva/lib/Node";
 import { useAnnotationStore } from "./store/useAnnotationStore";
 import { useOperations } from "./store/useOperations";
 import { EMPTY_PRELABEL_MODEL_LIBRARY } from "./types/prelabel";
+import { OPERATION_ZH_CN } from "./i18n/operations.zh-CN";
 
 const fixture = vi.hoisted(() => ({
   layout: null as ComponentProps<typeof AppLayout> | null,
@@ -122,11 +123,13 @@ it("preserves zoom and pan through status cards, expiry, and host resizing", asy
   const view = fixture.layout!.imageLayout;
   expect(view).toEqual({ x: -175, y: -110, width: 1200, height: 900, scale: 3 });
   act(() => useOperations.getState().begin({ label: "saved", resource: "export-dir" }).complete());
-  expect(host.querySelector('[role="status"]')).not.toBeNull();
+  const statusCard = () =>
+    host.querySelector(`[aria-label="${OPERATION_ZH_CN.statusArea}"] [role="status"]`);
+  expect(statusCard()).not.toBeNull();
   resize(800, 532);
   expect(fixture.layout!.imageLayout).toBe(view);
   await act(async () => vi.advanceTimersByTimeAsync(5000));
-  expect(host.querySelector('main [role="status"]')).toBeNull();
+  expect(statusCard()).toBeNull();
   resize(800, 600);
   expect(fixture.layout!.imageLayout).toBe(view);
   resize(0, 0);

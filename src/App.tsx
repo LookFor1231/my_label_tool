@@ -1,6 +1,5 @@
 import { useTextReadStore } from "./store/useTextReadStore";
 import { useMcpWorkspace } from "./hooks/useMcpWorkspace";
-import { McpControlBar } from "./components/settings/McpControlBar";
 import { withActiveProjectTemplate } from "./lib/label-template-sync";
 import { McpPanel } from "./components/settings/McpPanel";
 import { useVideoFrameNavigation } from "./hooks/useVideoFrameNavigation";
@@ -762,11 +761,16 @@ function App() {
 
   return (
     <div className="flex h-screen flex-col overflow-hidden">
-      <McpPanel status={mcp.status} error={mcp.error} onRevoke={() => mcp.controller.control.revoke()}>
-        <McpControlBar controller={mcp.controller} state={mcp.control} />
-      </McpPanel>
       <div ref={mcp.gateRef} className="min-h-0 flex-1">
       <AppLayout
+        sidebarFooter={
+          <McpPanel
+            status={mcp.status}
+            error={mcp.error}
+            controller={mcp.controller}
+            state={mcp.control}
+          />
+        }
         labelSamples={labelSamples}
         reextractVideo={
           !projectSettings.loading

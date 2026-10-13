@@ -89,7 +89,7 @@ CONTROL_LOCKED、CONFLICT、BUSY、TIMEOUT、CANCELLED、TASK_FAILED、INTERNAL_
 
 ## 连接与操作步骤
 
-在顶部「连接设置」查看地址并点击「显示令牌」。令牌存于应用数据目录的 `mcp.json`，
+侧边栏底部显示 MCP 运行状态和连接数；点击该入口，在「MCP 连接与控制」弹窗查看地址并点击「显示令牌」。令牌存于应用数据目录的 `mcp.json`，
 重启不变；不要把真实令牌提交到仓库或发给模型。Cherry Studio 的设置 → MCP → 添加服务器，
 选择 Streamable HTTP，填 URL 与 Authorization 请求头。可导入如下配置：
 
@@ -98,8 +98,8 @@ CONTROL_LOCKED、CONFLICT、BUSY、TIMEOUT、CANCELLED、TASK_FAILED、INTERNAL_
 ```
 
 1. 在桌面打开项目。调用 `project_read` 获取 projectId、revision、图片与标签 ID。
-2. 调用 `control_request` 请求所需权限；用户在常驻控制条勾选并批准。
-   保存权限要求已有项目保存位置，界面会显示该位置；导出权限必须先在控制条选择目标目录。
+2. 调用 `control_request` 请求所需权限；侧边栏入口显示「待批准」，用户点击后在弹窗中勾选并批准。批准成功后弹窗关闭；远程控制期间侧边栏保留「收回人工控制」快捷按钮。
+   保存权限要求已有项目保存位置，界面会显示该位置；导出权限必须先在弹窗选择目标目录。
 3. 轮询 `control_status`，获得 mcp 状态与 leaseId 后才可写入。只读工具不需要租约。
 4. 写入携带最新 revision。成功后使用返回的新版本；遇到 CONFLICT 先重读，不盲重试。
 5. 保存、导出、预打标立即返回 taskId；用 `task_status` 查询，`task_cancel` 取消。
