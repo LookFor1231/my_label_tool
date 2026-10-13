@@ -210,7 +210,7 @@ my_label_tool/
 │   └── tauri.conf.json
 ├── examples/plugins/               # 三种插件示例（标签预置 / 导出器 / 预打标）
 ├── examples/scripts/               # Lua 内置示例源文件与 catalog.json（覆盖全部脚本命令）
-├── containers/                     # 脚本宿主容器镜像（完整服务端形态仍在计划中）
+├── containers/                     # 独立 NDJSON 脚本宿主容器镜像
 ├── scripts/                        # 打包与验收脚本（插件打包/验证、视频工具与 Lua 宿主准备、脚本/视频/ONNX/ACP 验收）
 ├── .github/workflows/              # ci.yml、script-host.yml、official-models.yml、release.yml
 ├── docs/                           # 文档（build.md、video-annotation.md、onnx-graph.md、label-samples.md、scripting.md、scripting-user.md、script-protocol.md、acp.md、text-read-adapter.md、plugins.md、plugin-protocol.md、plugin-api-versioning.md、frontend-interaction.md、prelabel-resource-limits.md、插件/项目/视频 JSON Schema、adr/、verification/、research/）

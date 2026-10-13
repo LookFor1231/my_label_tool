@@ -131,7 +131,7 @@ my_label_tool/
 │   └── tauri.conf.json
 ├── examples/plugins/               # 插件开发示例（label-preset-demo / exporter-labelme-demo / prelabel-demo）
 ├── examples/scripts/               # Lua 内置示例源文件与 catalog.json：逐命令示例及组合用法，前端与验收脚本共用
-├── containers/                     # 独立脚本宿主容器（script-host.Dockerfile；完整服务端仍在计划区）
+├── containers/                     # 独立脚本宿主容器（script-host.Dockerfile）
 ├── scripts/                        # 打包/验收脚本（package-plugin.mjs、prepare-script-host.ps1、prepare-video-tools.ps1、verify-plugin-*.ps1、verify-script-host.ps1、verify-acp-agent.ps1、verify-video-support.ps1、verify-onnx-graph.py、i18n/plugin-tools.zh-CN.mjs）
 ├── .github/workflows/              # GitHub Actions：ci.yml、script-host.yml、official-models.yml、release.yml
 ├── docs/                           # 文档（build.md、plugins.md、plugin-protocol.md、plugin-api-versioning.md、frontend-interaction.md、video-annotation.md、onnx-graph.md、label-samples.md、scripting.md、scripting-user.md、script-protocol.md、acp.md、text-read-adapter.md、prelabel-resource-limits.md、架构评审报告目录、插件/项目 JSON Schema、research/、verification/、adr/）

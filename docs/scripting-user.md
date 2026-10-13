@@ -117,7 +117,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/prepare-script-host.
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify-script-host.ps1
 ```
 
-容器交付的是独立 NDJSON 脚本宿主，可以供后续服务端 runner 复用。**完整服务端 HTTP/UI 仍在 ROADMAP 计划区，本次没有宣称已经可用的服务端标注应用。**
+容器交付的是独立 NDJSON 脚本宿主，通过标准输入输出交换快照与结果，不包含 HTTP API 或标注界面。
 普通浏览器中未连接宿主时，面板明确显示不可用并禁用运行。
 
 ```powershell

@@ -54,7 +54,7 @@ manifest schemaVersion、插件协议、整体宿主 API、exporter/prelabel 能
 按名称改派标签、坐标修正、跨图连续编号，每项核对两张图片的结果。
 容器以非 root 身份、只读文件系统、无网络、无项目挂载运行。
 桌面资源含 `script-tools/label-script-host.exe` 与 Lua/mlua 许可；容器交付相同源码编译的
-独立 NDJSON 宿主。完整服务端应用仍属计划任务，普通浏览器未连接宿主时如实显示不可用。
+独立 NDJSON 宿主。普通浏览器未连接宿主时如实显示不可用。
 
 ## 完整审核范围
 
