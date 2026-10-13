@@ -122,7 +122,7 @@ my_label_tool/
 │   │   ├── text_read/              # 宿主文本读取唯一入口：模式注册表（原生 / Python / 命令）、Unicode 自检、外部进程读取与取消
 │   │   ├── process_control/        # 子进程基础设施：管道收发、Job Object 回收与 AppContainer 隔离（插件与 ACP 共用启动件）
 │   │   ├── plugins/                # 插件框架：manifest、protocol、runtime、permissions、registry、config
-│   │   └── i18n/                   # Rust 端用户可见文案（zh_cn.rs、text_read_zh_cn.rs）
+│   │   └── i18n/                   # Rust 端用户可见文案（zh_cn.rs、text_read_zh_cn.rs、update_zh_cn.rs 等）
 │   ├── tests/                      # 集成测试（plugin_conformance.rs、script_conformance.rs、acp_conformance.rs、acp_real_agent.rs）
 │   ├── capabilities/               # Tauri 权限（core/dialog/process/updater:default）
 │   ├── script-host/                # 独立 Lua 5.4 crate：commands.rs 命令注册表、protocol.rs NDJSON 信封与版本协商、vm.rs / limits.rs、tests/host.rs；不依赖 Tauri，不属于插件

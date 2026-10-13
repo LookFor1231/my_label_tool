@@ -1,4 +1,5 @@
 import { AppUpdateNotice } from "./AppUpdateNotice";
+import type { AppUpdateDialogProps } from "./AppUpdateDialog";
 import type { LabelSamples } from "../hooks/useLabelSamples";
 import { scopePaths, useAnnotationStore } from "../store/useAnnotationStore";
 import { useOperations } from "../store/useOperations";
@@ -148,7 +149,7 @@ interface AppLayoutProps {
   pluginPrelabelSources: PluginPrelabelSourceDescriptor[];
   pluginExportProgress: PluginExportProgressState | null;
   transformerRef: MutableRefObject<KonvaTransformer | null>;
-  pendingUpdate: import("./AppUpdateDialog").AppUpdateDialogProps["pendingUpdate"];
+  pendingUpdate: AppUpdateDialogProps["pendingUpdate"];
   isUpdateOpen: boolean;
   closeUpdateDialog: () => void;
   openUpdateDialog: () => void;

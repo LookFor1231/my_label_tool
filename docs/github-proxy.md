@@ -16,4 +16,6 @@
 
 宿主设置命令仅供桌面前端调用，经 `src/lib/tauri-api.ts` 封装；不向 MCP HTTP、插件或 Lua 开放，不改变标注、项目配置、插件权限与任何插件版本面。
 
+更新日志支持 Markdown 标题、有序/无序列表、粗体、行内代码及段落换行。链接与 HTML 保留为不可执行的原文，不加载外部图片；此处不是完整 Markdown 浏览器。
+
 验证用例：`src/hooks/useAppUpdate.test.tsx`、`src/components/settings/GitHubProxySettings.test.tsx`、`src/lib/updater.test.ts`、`src-tauri/src/app_update/tests.rs`、`src-tauri/src/github_proxy/` 的测试以及 Runtime/模型下载测试。HTTP 测试使用回环服务器，更新器测试通过测试公钥验证固定签名样本，并拒绝被篡改的数据；不安装测试样本，不依赖真实 GitHub 服务。签名样本由 `.gitattributes` 固定原始字节，测试私钥不入库。Windows 测试程序嵌入 Common Controls v6 依赖清单，确保 Tauri 模拟应用能在测试入口之前正常加载。

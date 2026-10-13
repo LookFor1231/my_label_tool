@@ -1,6 +1,7 @@
 import { Update, type DownloadEvent } from "@tauri-apps/plugin-updater";
 import { relaunch } from "@tauri-apps/plugin-process";
 import { checkAppUpdateMetadata, prepareAppUpdateDownload } from "./tauri-api";
+import type { AppUpdateMetadata } from "../types/app-update";
 
 export type AppUpdateStatus =
   "idle" | "checking" | "available" | "not-available" | "downloading" | "installed" | "error";
@@ -11,9 +12,13 @@ export interface AppUpdateProgress {
   percent: number | null;
 }
 
+function updateFromMetadata(metadata: AppUpdateMetadata): Update {
+  return new Update({ ...metadata, body: metadata.body ?? undefined });
+}
+
 export async function checkAppUpdate(): Promise<Update | null> {
   const metadata = await checkAppUpdateMetadata();
-  return metadata ? new Update({ ...metadata, body: metadata.body ?? undefined }) : null;
+  return metadata ? updateFromMetadata(metadata) : null;
 }
 
 export async function installAppUpdate(
@@ -28,7 +33,7 @@ export async function installAppUpdate(
 
   try {
     const metadata = await prepareAppUpdateDownload(update.rid);
-    download = new Update({ ...metadata, body: metadata.body ?? undefined });
+    download = updateFromMetadata(metadata);
     if (isCancelled()) return false;
     await download.download((event: DownloadEvent) => {
       if (event.event === "Started") {

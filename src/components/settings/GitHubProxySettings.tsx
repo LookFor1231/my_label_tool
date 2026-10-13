@@ -68,6 +68,7 @@ export function GitHubProxySettings({ onDirtyChange, onSavingChange }: Props) {
     >
       <h3 className="text-sm font-semibold text-slate-100">{text.title}</h3>
       <p className="text-xs leading-5 text-slate-400">{text.hint}</p>
+      <p className="text-xs leading-5 text-slate-400">{text.redirectHint}</p>
       {loading ? (
         <p role="status" className="text-xs text-slate-400">
           {text.loading}

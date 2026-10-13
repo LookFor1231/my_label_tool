@@ -4,6 +4,8 @@ export const GITHUB_PROXY_ZH_CN = {
   hint: "留空不使用 GitHub 代理。用于软件更新、ONNX Runtime 和 GitHub 模型下载。",
   example:
     "填写资源代理入口（例如 http://proxy.example:8080/github），将替换 https://github.com 前缀；不是 HTTP CONNECT 或 SOCKS 代理地址。",
+  redirectHint:
+    "代理服务需直接返回资源内容；跳转到其他站点（含 CDN）的入口不受支持，失败时不会回退直连。",
   placeholder: "留空不使用代理",
   save: "保存代理设置",
   saving: "正在保存…",

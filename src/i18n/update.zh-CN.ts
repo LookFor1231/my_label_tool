@@ -1,11 +1,12 @@
 const reason = (error: unknown) => (error instanceof Error ? error.message : String(error));
+const formatVersion = (version: string) => `V${version.replace(/^[vV]/, "")}`;
 
 export const UPDATE_ZH_CN = {
   title: "自动更新",
   check: "检查更新",
-  updateTo: (version: string) => `更新到 V${version.replace(/^[vV]/, "")}`,
-  version: (version: string) => `V${version.replace(/^[vV]/, "")}`,
-  currentVersion: (version: string) => `当前版本 V${version.replace(/^[vV]/, "")}`,
+  updateTo: (version: string) => `更新到 ${formatVersion(version)}`,
+  version: formatVersion,
+  currentVersion: (version: string) => `当前版本 ${formatVersion(version)}`,
   ready: "新版本已就绪",
   noReleaseNotes: "此版本暂无更新说明。",
   restartHint: "更新安装后将重启软件。",

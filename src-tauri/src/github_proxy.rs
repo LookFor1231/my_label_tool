@@ -5,7 +5,11 @@ pub(crate) mod test_support;
 use crate::i18n::zh_cn as text;
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
-use std::{fs, path::Path, sync::Mutex};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+    sync::Mutex,
+};
 use tauri::Manager;
 
 static SETTINGS_IO: Mutex<()> = Mutex::new(());
@@ -43,13 +47,16 @@ impl Settings {
     }
 }
 
+fn settings_path(app: &tauri::AppHandle) -> Result<PathBuf, String> {
+    Ok(app
+        .path()
+        .app_data_dir()
+        .map_err(text::github_proxy_failed)?
+        .join("github-proxy.json"))
+}
+
 pub fn load(app: &tauri::AppHandle) -> Result<Settings, String> {
-    read(
-        &app.path()
-            .app_data_dir()
-            .map_err(text::github_proxy_failed)?
-            .join("github-proxy.json"),
-    )
+    read(&settings_path(app)?)
 }
 
 pub async fn load_for_request(app: tauri::AppHandle) -> Result<Settings, String> {
@@ -59,13 +66,7 @@ pub async fn load_for_request(app: tauri::AppHandle) -> Result<Settings, String>
 }
 
 pub fn save(app: &tauri::AppHandle, settings: Settings) -> Result<Settings, String> {
-    write(
-        &app.path()
-            .app_data_dir()
-            .map_err(text::github_proxy_failed)?
-            .join("github-proxy.json"),
-        settings,
-    )
+    write(&settings_path(app)?, settings)
 }
 
 fn read(path: &Path) -> Result<Settings, String> {

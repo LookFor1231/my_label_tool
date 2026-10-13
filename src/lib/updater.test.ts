@@ -24,8 +24,12 @@ beforeEach(() => {
 afterEach(() => vi.restoreAllMocks());
 
 it("constructs a cached update from the host metadata and handles no update", async () => {
-  api.checkAppUpdateMetadata.mockResolvedValueOnce(metadata).mockResolvedValueOnce(null);
-  expect(await checkAppUpdate()).toMatchObject({ rid: 7, version: "2.0.0" });
+  api.checkAppUpdateMetadata
+    .mockResolvedValueOnce(metadata)
+    .mockResolvedValueOnce({ ...metadata, body: "### 更新说明" })
+    .mockResolvedValueOnce(null);
+  expect(await checkAppUpdate()).toMatchObject({ rid: 7, version: "2.0.0", body: undefined });
+  expect(await checkAppUpdate()).toMatchObject({ body: "### 更新说明" });
   expect(await checkAppUpdate()).toBeNull();
 });
 it("keeps the cached handle and closes only the attempt when cancelled during transfer", async () => {

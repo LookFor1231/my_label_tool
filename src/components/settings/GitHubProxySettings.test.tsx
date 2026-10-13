@@ -30,6 +30,7 @@ it("loads, saves normalized values, preserves invalid drafts on failure and clea
       root.render(<GitHubProxySettings onDirtyChange={dirty} onSavingChange={saving} />),
     );
     expect(host.querySelector("input")?.value).toBe("");
+    expect(host.textContent).toContain("跳转到其他站点（含 CDN）的入口不受支持");
     expect(host.querySelector("button")?.disabled).toBe(true);
     await change(" http://proxy.example/github/ ");
     expect(dirty).toHaveBeenLastCalledWith(true);

@@ -41,6 +41,8 @@ useOverlayStore → { hasBlocking(): boolean; hasLight(): boolean; depth(): numb
 
 **测试面**：渲染 → `Esc` 只在栈顶生效且 `canDismiss=false` 时不生效；`Tab` 不出面板、关闭后焦点回到触发元素；矮视口下（如 320px 高）面板不超过视口且关闭控件可达；打开 blocking 遮罩时全局快捷键不触发画布改动。
 
+**后续接入**：`AppUpdateDialog` 已使用 `blocking` 遮罩，复用 Esc、焦点归还与输入门禁；更新日志独立滚动，「稍后」「立即更新」固定在底部。关闭仅隐藏弹窗，本次运行缓存的版本可从侧栏菜单重新打开。
+
 ---
 
 ## 2. 快捷键动作表（Shortcut Table）
