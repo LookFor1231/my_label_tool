@@ -79,6 +79,10 @@ cargo test --manifest-path src-tauri/Cargo.toml --test acp_conformance
 
 **AI 助手在提交代码前必须执行**：`npm run typecheck`、`npm run lint`、`cargo clippy`，三者任一报错不得视为任务完成。触及 `src-tauri/script-host/**`、`examples/scripts/**` 或脚本协议时，还必须跑上面的宿主测试与 clippy（带 `--locked`）以及 `scripts/verify-script-host.ps1`。触及 `src-tauri/src/acp/**` 时必须跑 `acp_conformance` 与 `src/hooks/useAcpSession.test.tsx`、`src/lib/script-assistance.test.ts`；真实 Agent 验收用 `scripts/verify-acp-agent.ps1` 显式运行，常规测试不得调用模型服务。
 
+**纯文档修改例外**：仅修改说明性文档（如 README、AGENTS、指南、发布说明），未修改代码、依赖、构建/CI 配置或参与构建与测试的资源时，普通提交无需运行 typecheck、lint、覆盖率、cargo clippy/test 或构建，只核对文档内容与 `git diff --check`。本例外适用于本文所有普通提交前检查要求；版本 tag 发布仍须完成下述预检。
+
+**版本 tag 发布另有强制预检**：创建、移动或推送发布 tag 前，必须完成 §7.1 的 CI 等价验证；普通提交与分支推送不增加该项要求。
+
 ---
 
 ## 4. 目录结构
@@ -296,6 +300,30 @@ interface LabelTemplate {
   - [ ] 切换图片后是否正确加载/保存当前图片的标注
   - [ ] 快捷键改绑后是否立即生效，且不与系统/浏览器默认快捷键冲突
   - [ ] 导出文件用对应格式的标准工具（如 pycocotools）能否正确解析
+
+---
+
+### 7.1 版本 tag 前的 CI 等价验证（强制，仅发布时）
+
+**适用范围**：准备创建、移动或推送 `V*.*.*` / `v*.*.*` 发布 tag，包括修复后重新推送同一版本。普通 commit、普通分支 push 不执行本节新增预检，仍遵守既有提交检查。不得以「本地检查通过」替代对 CI 实际环境与历史失败的验证。
+
+发布前必须逐项完成：
+
+1. **以当前工作流为准对齐环境**：读取 `.github/workflows/ci.yml`、`script-host.yml` 与 `release.yml`，核对实际操作系统、Rust/Clippy、Node/npm、依赖安装方式和检查参数。当前主 CI 为 `windows-latest`、Rust `stable`、Node `lts/*`，不是本机已安装版本的别名。更新或安装当前 CI 使用的工具链并显式选择；记录 `rustc -Vv`、`cargo clippy -V`、`node --version`、`npm --version`。旧工具链通过不能证明当前 CI 会通过。
+2. **验证待打 tag 的最终内容**：在独立干净检出中使用锁文件与 `npm ci`，执行 `npm run typecheck`、`npm run lint`、`npm run test:coverage`、`cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings`、`cargo test --manifest-path src-tauri/Cargo.toml`；命令必须使用上一步核实的工具链。按工作流执行被调用的脚本宿主测试、严格 clippy 与平台矩阵；本地无法覆盖的平台可采用同一提交的远端 CI 成功结果。预检之后若再修改代码、依赖、版本文件或工作流，必须重验受影响项，不能沿用其他提交的通过结果。
+3. **逐项核对历史失败**：至少覆盖下表，并检查此后新增的 CI 失败。必须实际运行对应检查，不能仅搜索旧代码模式或查看历史修复提交就判定通过。
+
+   | 历史 CI | 已核实的失败原因 | tag 前必须验证 |
+   | --- | --- | --- |
+   | [#33](https://github.com/silevilence/my_label_tool/actions/runs/35555744381) | `thumbnail.rs` 的字节字符数组触发 `clippy::byte_char_slices` | 用当前 CI Rust/Clippy 运行完整的 `-D warnings` 检查，不能只运行无严格参数的本机 clippy |
+   | [#36](https://github.com/silevilence/my_label_tool/actions/runs/35704898555)、[#37](https://github.com/silevilence/my_label_tool/actions/runs/35828220331) | `onnx_graph/attributes.rs` 的常量大小 `chunks_exact` 触发 `clippy::chunks_exact_to_as_chunks`，同一问题连续失败 | 检查整个主 crate；不得因该模块本次未改动而跳过，也不能仅凭此前本地通过判定已解决 |
+   | [#39](https://github.com/silevilence/my_label_tool/actions/runs/35963130665) | `script-ui.acceptance.test.tsx` 将 Windows 检出的 CRLF 示例源码与编辑器返回的 LF 文本直接比较 | 核对 `.gitattributes`（如有）、Git 换行设置及实际检出字节；运行 `npm run test -- src/components/settings/script-ui.acceptance.test.tsx`，覆盖 LF 与 CRLF 示例输入，并执行完整 coverage |
+   | [#47](https://github.com/silevilence/my_label_tool/actions/runs/38335687020) | Rust 1.99 弃用 `AtomicUsize::fetch_update`，旧版 Rust 本地通过，CI 因 `-D warnings` 失败 | 使用当前 CI 工具链检查标准库弃用和新增 lint；不能把 Rust 1.96 等旧版本的通过结果作为发布依据 |
+
+4. **保留 CI 的运行条件**：Rust 测试按 CI 默认并行方式通过才算等价验证；仅加 `--test-threads=1` 后通过属于诊断结果，不能掩盖共享全局状态或计时竞态。遇到偶发失败要定位并修复，不得反复重跑直到偶然通过。文本读取测试应使用实际 `python.exe`（可通过 `TEXT_READ_TEST_PYTHON` 指定），避免将本机 `.bat` shim 误当作 CI 的解释器环境。
+5. **结果可复核且先于 tag**：保存待发布提交 SHA、工具版本、执行命令、退出码、历史失败逐项结论与日志位置（或同一 SHA 的 CI 链接）。工具链安装失败、检查未执行、测试失败或仅有不等价环境结果时，明确说明缺口，不得宣称预检通过并创建/移动/推送发布 tag；可先推送普通分支，取得同一提交的远端 CI 成功结果后再打 tag。不得通过降低 lint 严格度、忽略测试或串行化 CI 来绕过预检。
+
+本节预检通过后再推送发布 tag。耗时的完整 Release 构建与发布无需在本地重复执行；用户要求「启动后停止等待」时，只确认 tag 对应的新工作流已经启动即结束，不等待完整安装包构建，但这不能省略 tag 前的预检。
 
 ---
 
