@@ -1492,11 +1492,11 @@ mod tests {
         let outcome = dispatch_proxy_job(
             move |cancellation| {
                 let _commit = cancellation.begin_commit().expect("begin commit");
-                thread::sleep(Duration::from_millis(40));
+                thread::sleep(Duration::from_millis(300));
                 worker_committed.store(true, Ordering::Release);
                 ResponseOutcome::Result(Value::String("committed".to_string()))
             },
-            Duration::from_millis(5),
+            Duration::from_millis(100),
         );
 
         assert_eq!(
@@ -1506,7 +1506,9 @@ mod tests {
             )))
         );
         assert!(committed.load(Ordering::Acquire));
-        assert!(started.elapsed() >= Duration::from_millis(35));
+        // The deadline must expire while the worker holds its commit lease, so the
+        // dispatcher has to wait for it instead of cancelling an unstarted job.
+        assert!(started.elapsed() >= Duration::from_millis(250));
     }
 
     #[cfg(windows)]
