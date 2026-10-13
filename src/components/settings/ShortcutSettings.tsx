@@ -22,6 +22,8 @@ import { SHORTCUT_ZH_CN as shortcutText } from "../../i18n/shortcuts.zh-CN";
 import { PRELABEL_RESOURCE_ZH_CN as resourceText } from "../../i18n/prelabel-resource.zh-CN";
 import { PrelabelResourceSettings } from "./PrelabelResourceSettings";
 import { TextReadSettings } from "./TextReadSettings";
+import { GitHubProxySettings } from "./GitHubProxySettings";
+import { GITHUB_PROXY_ZH_CN as proxyText } from "../../i18n/github-proxy.zh-CN";
 import { usePrelabelResourceStore } from "../../store/usePrelabelResourceStore";
 
 interface ShortcutSettingsProps {
@@ -53,10 +55,13 @@ export function ShortcutSettings({
   const [recordError, setRecordError] = useState("");
   const [resourceDirty, setResourceDirty] = useState(false);
   const [resourceSaving, setResourceSaving] = useState(false);
+  const [proxyDirty, setProxyDirty] = useState(false);
+  const [proxySaving, setProxySaving] = useState(false);
 
   async function requestClose() {
-    if (resourceSaving || usePrelabelResourceStore.getState().saving) return;
+    if (proxySaving || resourceSaving || usePrelabelResourceStore.getState().saving) return;
     if (resourceDirty && !(await confirmAction(resourceText.discard))) return;
+    if (proxyDirty && !(await confirmAction(proxyText.discard))) return;
     onClose();
   }
 
@@ -165,7 +170,7 @@ export function ShortcutSettings({
           setRecordingActionId(null);
           return false;
         }
-        return !resourceSaving;
+        return !resourceSaving && !proxySaving;
       }}
     >
       <section className="scrollbar-dark max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-xl border border-slate-700 bg-slate-900 p-5 shadow-2xl">
@@ -177,13 +182,14 @@ export function ShortcutSettings({
           <button
             className="rounded border border-slate-700 px-3 py-1 text-sm text-slate-200 hover:bg-slate-800"
             type="button"
-            disabled={resourceSaving}
+            disabled={resourceSaving || proxySaving}
             onClick={() => void requestClose()}
           >
             关闭
           </button>
         </div>
 
+        <GitHubProxySettings onDirtyChange={setProxyDirty} onSavingChange={setProxySaving} />
         <PrelabelResourceSettings
           onDirtyChange={setResourceDirty}
           onSavingChange={setResourceSaving}

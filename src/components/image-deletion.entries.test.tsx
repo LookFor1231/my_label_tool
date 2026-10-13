@@ -53,6 +53,7 @@ vi.mock("../lib/tauri-api", async (importOriginal) => ({
   mcpPoll: vi.fn().mockResolvedValue({ status: { running: false, enabled: false, address: "127.0.0.1", port: 1421, generation: 0, error: null, sessions: [], audit: [] }, calls: [] }),
   loadLabelTemplates: vi.fn().mockResolvedValue([]),
   loadShortcuts: vi.fn().mockResolvedValue({}),
+  loadGitHubProxySettings: vi.fn().mockResolvedValue({ url: "" }),
   loadPrelabelResourceLimits: vi
     .fn()
     .mockResolvedValue({ maxMemoryMiB: 80, maxCandidates: 100_000 }),

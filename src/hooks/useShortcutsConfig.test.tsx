@@ -9,7 +9,7 @@ import {
 } from "../lib/defaults/display";
 import { DEFAULT_SHORTCUTS, type ShortcutMap } from "../lib/defaults/shortcuts";
 import { confirmAction } from "../lib/prompts";
-import { loadShortcuts, saveShortcuts, loadPrelabelResourceLimits } from "../lib/tauri-api";
+import { loadShortcuts, saveShortcuts, loadPrelabelResourceLimits, loadGitHubProxySettings } from "../lib/tauri-api";
 import { PRELABEL_RESOURCE_ZH_CN as resourceText } from "../i18n/prelabel-resource.zh-CN";
 import { SHORTCUT_ZH_CN as text } from "../i18n/shortcuts.zh-CN";
 import { useShortcutStore } from "../store/useShortcutStore";
@@ -21,6 +21,7 @@ vi.mock("../lib/tauri-api", () => ({
   loadShortcuts: vi.fn(),
   saveShortcuts: vi.fn(),
   loadPrelabelResourceLimits: vi.fn(),
+  loadGitHubProxySettings: vi.fn(),
 }));
 vi.mock("../lib/prompts", () => ({ confirmAction: vi.fn() }));
 
@@ -54,6 +55,7 @@ beforeEach(() => {
   vi.resetAllMocks();
   window.localStorage.clear();
   vi.mocked(loadShortcuts).mockResolvedValue(DEFAULT_SHORTCUTS);
+  vi.mocked(loadGitHubProxySettings).mockResolvedValue({ url: "" });
   vi.mocked(loadPrelabelResourceLimits).mockResolvedValue({
     maxMemoryMiB: 80,
     maxCandidates: 100_000,

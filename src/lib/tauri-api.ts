@@ -1,4 +1,13 @@
 import { useOperations } from "../store/useOperations";
+import type { GitHubProxySettings } from "../types/github-proxy";
+
+export function loadGitHubProxySettings(): Promise<GitHubProxySettings> {
+  return invoke("load_github_proxy_settings");
+}
+
+export function saveGitHubProxySettings(settings: GitHubProxySettings): Promise<GitHubProxySettings> {
+  return invoke("save_github_proxy_settings", { settings });
+}
 import { TEXT_READ_ZH_CN as textReadText } from "../i18n/text-read.zh-CN";
 import type { VideoExtractionSettings } from "../types/project-settings";
 import type { AcpConfig, AcpEvent, AcpResult } from "../types/acp";

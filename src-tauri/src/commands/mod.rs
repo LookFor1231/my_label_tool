@@ -1,4 +1,6 @@
 mod acp;
+mod github_proxy;
+pub use github_proxy::*;
 mod mcp;
 pub use mcp::*;
 mod text_read;

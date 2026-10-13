@@ -1,5 +1,6 @@
 pub mod acp;
 mod commands;
+mod github_proxy;
 mod i18n;
 pub mod mcp;
 mod media;
@@ -37,6 +38,8 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            commands::load_github_proxy_settings,
+            commands::save_github_proxy_settings,
             commands::mcp_poll,
             commands::mcp_token,
             commands::mcp_configure,

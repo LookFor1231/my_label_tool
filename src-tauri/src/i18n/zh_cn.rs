@@ -987,3 +987,8 @@ pub fn label_sample_rollback(
 #[path = "text_read_zh_cn.rs"]
 mod text_read;
 pub use text_read::*;
+
+pub const GITHUB_PROXY_URL_INVALID: &str = "请输入有效的 HTTP/HTTPS 资源代理入口，不含用户名、密码、查询参数或片段；留空不使用代理。";
+pub fn github_proxy_failed(error: impl std::fmt::Display) -> String {
+    format!("GitHub 代理设置失败：{error}")
+}
