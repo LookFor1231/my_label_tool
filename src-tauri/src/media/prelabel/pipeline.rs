@@ -545,8 +545,8 @@ mod tests {
 
     #[test]
     fn decodes_yolov5_anchor_branches() {
-        let mut small = vec![-20.0; 1 * 3 * 80 * 80 * 7];
-        let offset = (((2 * 80 + 1) * 7) + 0) as usize;
+        let mut small = vec![-20.0; 3 * 80 * 80 * 7];
+        let offset = ((2 * 80 + 1) * 7) as usize;
         small[offset..offset + 4].fill(0.0);
         small[offset + 4] = 10.0;
         small[offset + 5] = 10.0;
@@ -557,11 +557,11 @@ mod tests {
             },
             RawTensor {
                 shape: vec![1, 3, 40, 40, 7],
-                data: vec![-20.0; 1 * 3 * 40 * 40 * 7],
+                data: vec![-20.0; 3 * 40 * 40 * 7],
             },
             RawTensor {
                 shape: vec![1, 3, 20, 20, 7],
-                data: vec![-20.0; 1 * 3 * 20 * 20 * 7],
+                data: vec![-20.0; 3 * 20 * 20 * 7],
             },
         ];
         let transform = LetterboxTransform {
