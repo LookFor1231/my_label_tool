@@ -50,7 +50,21 @@ vi.mock("./lib/updater", () => ({ checkAppUpdate: vi.fn().mockResolvedValue(null
 vi.mock("./lib/tauri-api", async (importOriginal) => ({
   ...(await importOriginal<typeof import("./lib/tauri-api")>()),
   loadLabelConfigs: vi.fn().mockResolvedValue([]),
-  mcpPoll: vi.fn().mockResolvedValue({ status: { running: false, enabled: false, address: "127.0.0.1", port: 1421, generation: 0, error: null, sessions: [], audit: [] }, calls: [] }),
+  mcpPoll: vi
+    .fn()
+    .mockResolvedValue({
+      status: {
+        running: false,
+        enabled: false,
+        address: "127.0.0.1",
+        port: 1421,
+        generation: 0,
+        error: null,
+        sessions: [],
+        audit: [],
+      },
+      calls: [],
+    }),
   loadLabelTemplates: vi.fn().mockResolvedValue([]),
   loadShortcuts: vi.fn().mockResolvedValue({}),
   loadPluginLabelPresets: vi.fn().mockResolvedValue({ presets: [], warning: null }),
@@ -62,7 +76,7 @@ vi.mock("./lib/tauri-api", async (importOriginal) => ({
 
 let root: Root;
 let host: HTMLDivElement;
-let notifyResize: () => void;
+const resizeObservers = new Set<() => void>();
 function image(width: number, height: number) {
   return Object.defineProperties(new Image(), {
     naturalWidth: { value: width },
@@ -75,7 +89,9 @@ function resize(width: number, height: number) {
     clientWidth: { configurable: true, value: width },
     clientHeight: { configurable: true, value: height },
   });
-  act(() => notifyResize());
+  act(() => {
+    for (const notify of resizeObservers) notify();
+  });
 }
 function pointer(x: number, y: number) {
   return {
@@ -83,16 +99,21 @@ function pointer(x: number, y: number) {
   } as KonvaEventObject<MouseEvent>;
 }
 beforeEach(() => {
+  resizeObservers.clear();
   Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
   vi.useFakeTimers();
   vi.stubGlobal(
     "ResizeObserver",
     class {
+      callback: () => void;
       constructor(callback: () => void) {
-        notifyResize = callback;
+        this.callback = callback;
+        resizeObservers.add(callback);
       }
       observe() {}
-      disconnect() {}
+      disconnect() {
+        resizeObservers.delete(this.callback);
+      }
     },
   );
   HTMLElement.prototype.scrollIntoView = vi.fn();

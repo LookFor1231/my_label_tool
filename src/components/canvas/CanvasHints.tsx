@@ -1,3 +1,5 @@
+import { useHintPlacement } from "../../hooks/useHintPlacement";
+import type { HintPoint } from "../../lib/hint-placement";
 import type { ReactNode } from "react";
 import { useShortcutStore } from "../../store/useShortcutStore";
 import { useCanvasHintStore } from "../../store/useCanvasHintStore";
@@ -16,16 +18,20 @@ function HintPanel({
   title,
   omitted,
   children,
+  pointer,
 }: {
   corner: OverlayCorner;
   title: string;
   omitted: number;
   children: ReactNode;
+  pointer: HintPoint | null;
 }) {
+  const placement = useHintPlacement(corner.endsWith("left") ? "left" : "right", pointer);
   return (
     <div
-      style={{ maxWidth: "min(320px, calc((100% - 36px) / 2))" }}
-      className={`canvas-floating-panel pointer-events-none absolute z-10 rounded-lg border border-slate-700/70 bg-slate-950/75 px-3 py-2 text-xs leading-5 text-slate-200 shadow-lg ${corner.startsWith("top") ? "canvas-floating-panel-top" : "canvas-floating-panel-bottom"} ${corner.endsWith("left") ? "left-3" : "right-3"}`}
+      ref={placement.ref}
+      style={{ maxWidth: "min(320px, calc((100% - 36px) / 2))", opacity: placement.faded ? 0 : 1 }}
+      className={`canvas-floating-panel pointer-events-none absolute z-10 rounded-lg border border-slate-700/70 bg-slate-950/75 px-3 py-2 text-xs leading-5 text-slate-200 shadow-lg ${placement.edge === "top" ? "canvas-floating-panel-top" : "canvas-floating-panel-bottom"} ${corner.endsWith("left") ? "left-3" : "right-3"}`}
     >
       <div className="truncate font-medium text-sky-200">{title}</div>
       {children}
@@ -39,11 +45,13 @@ export function ModeHelpOverlay({
   mode,
   shortcuts,
   height = 768,
+  pointer = null,
 }: {
   corner: OverlayCorner;
   mode: InteractionMode;
   shortcuts: ShortcutMap;
   height?: number;
+  pointer?: HintPoint | null;
 }) {
   const help = INTERACTION_MODE_HELP[mode];
   const handlers = useShortcutStore((state) => state.handlers);
@@ -59,7 +67,12 @@ export function ModeHelpOverlay({
   ];
   const visible = rows.slice(0, hintRowLimit(maximum, height));
   return (
-    <HintPanel corner={corner} title={help.title} omitted={rows.length - visible.length}>
+    <HintPanel
+      pointer={pointer}
+      corner={corner}
+      title={help.title}
+      omitted={rows.length - visible.length}
+    >
       {visible.map((row) => (
         <div key={row.id} className={`truncate ${row.available ? "" : "text-slate-500"}`}>
           {row.content}
@@ -74,11 +87,13 @@ export function LabelShortcutOverlay({
   corner,
   labels,
   height = 768,
+  pointer = null,
 }: {
   currentLabelId: string;
   corner: OverlayCorner;
   labels: LabelConfig[];
   height?: number;
+  pointer?: HintPoint | null;
 }) {
   const maximum = useCanvasHintStore((state) => state.labelLimit);
   const { visible, omitted } = visibleLabelHints(
@@ -88,7 +103,7 @@ export function LabelShortcutOverlay({
   );
   if (!visible.length) return null;
   return (
-    <HintPanel corner={corner} title={text.labels} omitted={omitted}>
+    <HintPanel pointer={pointer} corner={corner} title={text.labels} omitted={omitted}>
       {visible.map((label) => (
         <div
           key={label.id}

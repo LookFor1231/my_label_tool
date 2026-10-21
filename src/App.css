@@ -34,10 +34,7 @@
 .canvas-floating-panel {
   max-height: calc(100% - 72px);
   overflow: hidden;
-  transition:
-    top 180ms ease-out,
-    transform 180ms ease-out;
-  will-change: top, transform;
+  transition: opacity 100ms ease-out;
 }
 
 .canvas-floating-panel-bottom {

@@ -27,7 +27,6 @@ import {
   ModeHelpOverlay,
   ZoomIndicator,
   isFitScale,
-  type OverlayCorner,
 } from "./canvas/CanvasChrome";
 import {
   getFitScale,
@@ -385,12 +384,6 @@ export function AppLayout({
     setCanvasPointer({ x: event.clientX - bounds.left, y: event.clientY - bounds.top });
   }
 
-  const modeHelpCorner: OverlayCorner =
-    canvasPointer && canvasPointer.x < 360 && canvasPointer.y < 220 ? "bottom-left" : "top-left";
-  const labelShortcutCorner: OverlayCorner =
-    canvasPointer && canvasPointer.x > canvasSize.width - 360 && canvasPointer.y < 220
-      ? "bottom-right"
-      : "top-right";
   const isPointerInImage =
     canvasPointer !== null &&
     imageLayout !== null &&
@@ -629,7 +622,8 @@ export function AppLayout({
                 )}
                 {helpDisplaySettings.showModeHelp && (
                   <ModeHelpOverlay
-                    corner={modeHelpCorner}
+                    corner="top-left"
+                    pointer={canvasPointer}
                     height={canvasSize.height}
                     mode={interactionMode}
                     shortcuts={shortcuts}
@@ -637,7 +631,8 @@ export function AppLayout({
                 )}
                 {helpDisplaySettings.showLabelShortcuts && (
                   <LabelShortcutOverlay
-                    corner={labelShortcutCorner}
+                    corner="top-right"
+                    pointer={canvasPointer}
                     height={canvasSize.height}
                     currentLabelId={currentLabel.id}
                     labels={labels}
