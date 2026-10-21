@@ -1,3 +1,4 @@
+import { LABEL_PICKER_TEXT as pickerText } from "../../i18n/label-picker.zh-CN";
 import { PROJECT_ZH_CN as projectText } from "../../i18n/project.zh-CN";
 import type { LabelSamples } from "../../hooks/useLabelSamples";
 import { ScriptPanel } from "../settings/ScriptPanel";
@@ -32,6 +33,7 @@ import { VIDEO_ZH_CN as videoText } from "../../i18n/video.zh-CN";
 import { UPDATE_ZH_CN as updateText } from "../../i18n/update.zh-CN";
 
 interface AppSidebarProps {
+  openLabelPicker?: () => void;
   pendingVersion?: string;
   openUpdateDialog?: () => void;
   footer?: ReactNode;
@@ -100,6 +102,7 @@ interface AppSidebarProps {
 }
 
 export function AppSidebar({
+  openLabelPicker,
   pendingVersion,
   openUpdateDialog,
   footer,
@@ -459,6 +462,14 @@ export function AppSidebar({
               );
             })}
           </div>
+          <button
+            type="button"
+            onClick={openLabelPicker}
+            disabled={busy}
+            className="mb-3 w-full rounded border border-sky-700 bg-sky-950/30 px-3 py-2 text-sm text-sky-200 hover:bg-sky-900/40"
+          >
+            {pickerText.title}
+          </button>
           <label className="block text-sm text-slate-300">
             当前标签（新框使用）
             <select

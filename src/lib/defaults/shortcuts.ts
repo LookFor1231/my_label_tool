@@ -1,3 +1,4 @@
+import { LABEL_PICKER_TEXT } from "../../i18n/label-picker.zh-CN";
 import { SHORTCUT_ZH_CN as actionText } from "../../i18n/shortcuts.zh-CN";
 import { IMAGE_DELETION_ZH_CN as text } from "../../i18n/image-deletion.zh-CN";
 import { VIDEO_ZH_CN as videoText } from "../../i18n/video.zh-CN";
@@ -21,9 +22,11 @@ const ACTION_LABELS = [
     id: "undoPolygonPoint",
     ...actionText.undoPolygonPoint,
   },
+  { id: "labelPicker", label: LABEL_PICKER_TEXT.title, description: LABEL_PICKER_TEXT.description },
 ] as const;
 
 const bindings = {
+  labelPicker: ["F2", "canvas", true],
   deleteImage: ["F8", "canvas", true],
   previousImage: ["ArrowLeft", "canvas", true],
   nextImage: ["ArrowRight", "canvas", true],

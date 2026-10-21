@@ -1,3 +1,5 @@
+import { LabelPicker } from "./LabelPicker";
+import { useEffect } from "react";
 import { AppUpdateNotice } from "./AppUpdateNotice";
 import type { AppUpdateDialogProps } from "./AppUpdateDialog";
 import type { LabelSamples } from "../hooks/useLabelSamples";
@@ -366,6 +368,20 @@ export function AppLayout({
   const annotationsBusy = useOperations((state) => !state.canEditAnnotations());
   const [canvasPointer, setCanvasPointer] = useState<{ x: number; y: number } | null>(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isLabelPickerOpen, setIsLabelPickerOpen] = useState(false);
+  useEffect(() => setIsLabelPickerOpen(false), [folderPath]);
+  function closeLabelPicker() {
+    setIsLabelPickerOpen(false);
+    requestAnimationFrame(() => canvasHostRef.current?.focus());
+  }
+  useShortcut(
+    "labelPicker",
+    !annotationsBusy
+      ? (event) => {
+          if (!event.repeat) setIsLabelPickerOpen(true);
+        }
+      : undefined,
+  );
   const scopeStack = useAnnotationStore((state) => state.scopeStack);
   const scopedPaths = scopePaths({ images, scopeStack });
   const selectedImageIndex = scopedPaths.indexOf(selectedPath);
@@ -430,6 +446,7 @@ export function AppLayout({
     <main className="flex h-full flex-col overflow-hidden bg-slate-950 text-slate-100">
       <div className="flex min-h-0 flex-1">
         <AppSidebar
+          openLabelPicker={() => setIsLabelPickerOpen(true)}
           footer={sidebarFooter}
           busy={annotationsBusy}
           labelSamples={labelSamples}
@@ -502,6 +519,7 @@ export function AppLayout({
         >
           <div
             ref={canvasHostRef}
+            tabIndex={-1}
             className={`relative min-h-0 min-w-0 flex-1 overflow-hidden bg-slate-950 ${isPanning ? "cursor-grabbing" : spacePanActive ? "cursor-grab" : canvasCursorClass}`}
             onMouseLeave={() => setCanvasPointer(null)}
             onMouseMove={updateCanvasPointer}
@@ -744,6 +762,17 @@ export function AppLayout({
         installUpdate={installUpdate}
       />
 
+      {isLabelPickerOpen && (
+        <LabelPicker
+          labels={labels}
+          currentId={currentLabel.id}
+          selectedShapeType={annotations.find((shape) => shape.id === selectedShapeId)?.type}
+          folder={folderPath}
+          openKey={shortcuts.labelPicker}
+          onSelect={selectCurrentLabel}
+          onClose={closeLabelPicker}
+        />
+      )}
       {isShortcutSettingsOpen && (
         <Suspense fallback={null}>
           <ShortcutSettings
