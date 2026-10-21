@@ -630,13 +630,15 @@ export function AppLayout({
                 {helpDisplaySettings.showModeHelp && (
                   <ModeHelpOverlay
                     corner={modeHelpCorner}
+                    height={canvasSize.height}
                     mode={interactionMode}
                     shortcuts={shortcuts}
                   />
                 )}
-                {interactionMode === "default" && helpDisplaySettings.showLabelShortcuts && (
+                {helpDisplaySettings.showLabelShortcuts && (
                   <LabelShortcutOverlay
                     corner={labelShortcutCorner}
+                    height={canvasSize.height}
                     currentLabelId={currentLabel.id}
                     labels={labels}
                   />

@@ -1,7 +1,5 @@
+export { ModeHelpOverlay, LabelShortcutOverlay } from "./CanvasHints";
 import { resolveGesture } from "../../lib/gestures";
-import { useShortcutStore } from "../../store/useShortcutStore";
-import { shortcutKey } from "../../lib/shortcuts";
-import { formatShortcut } from "../../lib/shortcut-utils";
 import { SHORTCUT_ZH_CN as shortcutText } from "../../i18n/shortcuts.zh-CN";
 import { INTERACTION_ZH_CN as interactionText } from "../../i18n/interaction.zh-CN";
 import { DISPLAY_ZH_CN as displayText } from "../../i18n/display.zh-CN";
@@ -16,83 +14,13 @@ import {
   type AnnotationShape,
   type LabelConfig,
 } from "../../types/annotation";
-import { SHORTCUT_ACTIONS, type ShortcutMap } from "../../lib/defaults/shortcuts";
 import { toCanvasPoints, toCanvasRect } from "./geometry";
-import { INTERACTION_MODE_HELP, type ImageLayout, type InteractionMode } from "./types";
+import { type ImageLayout, type InteractionMode } from "./types";
 
 interface DeleteAnnotationDialogProps {
   labelName: string;
   onCancel: () => void;
   onConfirm: () => void;
-}
-
-interface ModeHelpOverlayProps {
-  corner: OverlayCorner;
-  mode: InteractionMode;
-  shortcuts: ShortcutMap;
-}
-
-export function ModeHelpOverlay({ corner, mode, shortcuts }: ModeHelpOverlayProps) {
-  const help = INTERACTION_MODE_HELP[mode];
-  const handlers = useShortcutStore((state) => state.handlers);
-  const shortcutTips = SHORTCUT_ACTIONS;
-
-  return (
-    <div
-      className={`canvas-floating-panel pointer-events-none absolute z-10 max-w-xs rounded-lg border border-slate-700/70 bg-slate-950/75 px-3 py-2 text-xs leading-5 text-slate-200 shadow-lg ${OVERLAY_CORNER_CLASS[corner]}`}
-    >
-      <div className="font-medium text-sky-200">{help.title}</div>
-      {help.tips.map((tip) => (
-        <div key={tip}>{tip}</div>
-      ))}
-      {shortcutTips.length > 0 && (
-        <div className="mt-1 border-t border-slate-700/70 pt-1 text-slate-300">
-          {shortcutTips.map((tip) => (
-            <div key={tip.id} className={handlers[tip.id] ? undefined : "text-slate-600"}>
-              {formatShortcut(shortcutKey(tip, shortcuts))}：{tip.label}
-              {handlers[tip.id] ? "" : `（${shortcutText.unavailable}）`}
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-interface LabelShortcutOverlayProps {
-  currentLabelId: string;
-  corner: OverlayCorner;
-  labels: LabelConfig[];
-}
-
-export function LabelShortcutOverlay({
-  currentLabelId,
-  corner,
-  labels,
-}: LabelShortcutOverlayProps) {
-  const labelShortcuts = labels.filter((label) => label.shortcut);
-  if (labelShortcuts.length === 0) {
-    return null;
-  }
-
-  return (
-    <div
-      className={`canvas-floating-panel pointer-events-none absolute z-10 max-w-xs rounded-lg border border-slate-700/70 bg-slate-950/75 px-3 py-2 text-xs leading-5 text-slate-200 shadow-lg ${OVERLAY_CORNER_CLASS[corner]}`}
-    >
-      <div className="font-medium text-sky-200">标签快捷键</div>
-      {labelShortcuts.map((label) => (
-        <div
-          className={`flex gap-2 rounded px-1 ${
-            label.id === currentLabelId ? "bg-sky-500/25 text-sky-100" : ""
-          }`}
-          key={label.id}
-        >
-          <span className="min-w-5 text-slate-400">{label.shortcut}</span>
-          <span>{label.name}</span>
-        </div>
-      ))}
-    </div>
-  );
 }
 
 export type OverlayCorner = "bottom-left" | "bottom-right" | "top-left" | "top-right";
@@ -147,13 +75,6 @@ export function ZoomIndicator({
     </div>
   );
 }
-
-const OVERLAY_CORNER_CLASS: Record<OverlayCorner, string> = {
-  "bottom-left": "canvas-floating-panel-bottom left-3",
-  "bottom-right": "canvas-floating-panel-bottom right-3",
-  "top-left": "canvas-floating-panel-top left-3",
-  "top-right": "canvas-floating-panel-top right-3",
-};
 
 export function DeleteAnnotationDialog({
   labelName,

@@ -1,3 +1,4 @@
+import { CanvasHintSettings } from "./CanvasHintSettings";
 import { INTERACTION_ZH_CN as interactionText } from "../../i18n/interaction.zh-CN";
 import { DISPLAY_ZH_CN as displayText } from "../../i18n/display.zh-CN";
 import { Overlay } from "../overlay/Overlay";
@@ -206,6 +207,7 @@ export function ShortcutSettings({
 
         <div className="mt-4 rounded border border-slate-800 p-3">
           <h3 className="text-sm font-medium text-slate-100">画布提示</h3>
+          <CanvasHintSettings />
           <div className="mt-3 grid gap-2 sm:grid-cols-2">
             <label className="flex items-start gap-2 rounded border border-slate-800 bg-slate-950 p-2 text-sm text-slate-200">
               <input
