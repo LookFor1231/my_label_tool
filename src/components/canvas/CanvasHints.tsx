@@ -48,9 +48,10 @@ export function ModeHelpOverlay({
   const help = INTERACTION_MODE_HELP[mode];
   const handlers = useShortcutStore((state) => state.handlers);
   const maximum = useCanvasHintStore((state) => state.operationLimit);
+  const visibleActions = useCanvasHintStore((state) => state.visibleActions);
   const rows = [
     ...help.tips.map((tip) => ({ id: tip, content: tip, available: true })),
-    ...SHORTCUT_ACTIONS.map((action) => ({
+    ...SHORTCUT_ACTIONS.filter((action) => visibleActions[action.id]).map((action) => ({
       id: action.id,
       content: `${formatShortcut(shortcutKey(action, shortcuts))}：${action.label}${handlers[action.id] ? "" : `（${shortcutText.unavailable}）`}`,
       available: !!handlers[action.id],

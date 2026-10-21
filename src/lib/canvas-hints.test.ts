@@ -1,6 +1,8 @@
 import { expect, it } from "vitest";
 import { hintRowLimit, visibleLabelHints } from "./canvas-hints";
 import { useCanvasHintStore } from "../store/useCanvasHintStore";
+import { DEFAULT_SHORTCUTS } from "./defaults/shortcuts";
+import { resolveShortcut } from "./shortcuts";
 const labels = Array.from({ length: 50 }, (_, i) => ({
   id: String(i),
   name: `长标签${i}`,
@@ -20,6 +22,31 @@ it("caps rows against available height", () => {
   expect(hintRowLimit(50, 324)).toBe(10);
   expect(hintRowLimit(3, 768)).toBe(3);
   expect(hintRowLimit(8, 80)).toBe(1);
+});
+it("persists individual hints without disabling fixed shortcuts and restores only visibility", async () => {
+  const store = useCanvasHintStore;
+  store.getState().setActionVisible("undo", true);
+  store.getState().setActionVisible("nextImage", false);
+  await store.persist.rehydrate();
+  expect(store.getState().visibleActions.undo).toBe(true);
+  expect(store.getState().visibleActions.nextImage).toBe(false);
+  store.getState().restoreVisibility();
+  expect(store.getState().visibleActions.undo).toBe(false);
+  expect(store.getState().visibleActions.nextImage).toBe(true);
+  expect(
+    resolveShortcut(
+      { key: "z", ctrlKey: true },
+      {
+        shortcuts: DEFAULT_SHORTCUTS,
+        labelShortcuts: [],
+        available: ["undo"],
+        hasBlockingOverlay: false,
+        hasLightOverlay: false,
+        isEditableTarget: false,
+        busy: false,
+      },
+    ),
+  ).toBe("undo");
 });
 it("rejects invalid limits and persists valid preferences", async () => {
   const store = useCanvasHintStore;

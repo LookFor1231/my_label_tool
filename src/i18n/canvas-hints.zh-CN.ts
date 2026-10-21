@@ -1,4 +1,6 @@
 export const HINT_TEXT = {
+  showAction: "在画布提示中显示",
+  restoreVisibility: "恢复提示显示默认值",
   operationLimit: "操作提示最大条数",
   labelLimit: "标签提示最大条数",
   limitHelp: "请输入 1–50 的整数；窗口较小时自动减少条数。",

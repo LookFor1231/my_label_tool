@@ -1,4 +1,6 @@
 import { CanvasHintSettings } from "./CanvasHintSettings";
+import { useCanvasHintStore } from "../../store/useCanvasHintStore";
+import { HINT_TEXT as hintText } from "../../i18n/canvas-hints.zh-CN";
 import { INTERACTION_ZH_CN as interactionText } from "../../i18n/interaction.zh-CN";
 import { DISPLAY_ZH_CN as displayText } from "../../i18n/display.zh-CN";
 import { Overlay } from "../overlay/Overlay";
@@ -52,6 +54,7 @@ export function ShortcutSettings({
   onChangeShortcut,
   onClose,
 }: ShortcutSettingsProps) {
+  const hintSettings = useCanvasHintStore();
   const [recordingActionId, setRecordingActionId] = useState<ShortcutActionId | null>(null);
   const [recordError, setRecordError] = useState("");
   const [resourceDirty, setResourceDirty] = useState(false);
@@ -208,6 +211,13 @@ export function ShortcutSettings({
         <div className="mt-4 rounded border border-slate-800 p-3">
           <h3 className="text-sm font-medium text-slate-100">画布提示</h3>
           <CanvasHintSettings />
+          <button
+            type="button"
+            className="mt-3 text-xs text-sky-300 hover:text-sky-200"
+            onClick={hintSettings.restoreVisibility}
+          >
+            {hintText.restoreVisibility}
+          </button>
           <div className="mt-3 grid gap-2 sm:grid-cols-2">
             <label className="flex items-start gap-2 rounded border border-slate-800 bg-slate-950 p-2 text-sm text-slate-200">
               <input
@@ -325,6 +335,17 @@ export function ShortcutSettings({
               <div>
                 <p className="text-sm font-medium text-slate-100">{action.label}</p>
                 <p className="text-xs text-slate-500">{action.description}</p>
+                <label className="mt-2 flex items-center gap-2 text-xs text-slate-400">
+                  <input
+                    type="checkbox"
+                    aria-label={`${action.label}：${hintText.showAction}`}
+                    checked={hintSettings.visibleActions[action.id]}
+                    onChange={(event) =>
+                      hintSettings.setActionVisible(action.id, event.target.checked)
+                    }
+                  />
+                  {hintText.showAction}
+                </label>
                 {detectConflicts(
                   shortcuts,
                   labelShortcuts.map((shortcut, index) => ({
