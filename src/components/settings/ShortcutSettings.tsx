@@ -19,8 +19,8 @@ import type {
   LabelDisplaySettings,
   RectSizeDisplaySettings,
 } from "../../lib/defaults/display";
-import { formatShortcut, normalizeShortcutKey } from "../../lib/shortcut-utils";
-import { detectConflicts, shortcutKey } from "../../lib/shortcuts";
+import { formatShortcut } from "../../lib/shortcut-utils";
+import { detectConflicts, eventShortcut, shortcutKey } from "../../lib/shortcuts";
 import { SHORTCUT_ZH_CN as shortcutText } from "../../i18n/shortcuts.zh-CN";
 import { PRELABEL_RESOURCE_ZH_CN as resourceText } from "../../i18n/prelabel-resource.zh-CN";
 import { PrelabelResourceSettings } from "./PrelabelResourceSettings";
@@ -77,15 +77,17 @@ export function ShortcutSettings({
     const actionId = recordingActionId;
 
     function handleKeyDown(event: KeyboardEvent) {
+      if (event.isComposing || event.keyCode === 229 || event.repeat) return;
       event.preventDefault();
 
-      if (event.ctrlKey || event.altKey || event.metaKey || isModifierKey(event.key)) {
-        setRecordError(shortcutText.singleKey);
-        return;
-      }
+      if (isModifierKey(event.key)) return;
 
-      const shortcut = normalizeShortcutKey(event.key);
-      if (["Enter", " ", "Tab"].includes(shortcut)) {
+      const shortcut = eventShortcut(event);
+      if (
+        ["Enter", " ", "Tab"].includes(event.key) ||
+        event.metaKey ||
+        event.getModifierState("AltGraph")
+      ) {
         setRecordError(shortcutText.reserved);
         return;
       }

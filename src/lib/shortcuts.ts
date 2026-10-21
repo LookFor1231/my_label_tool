@@ -1,5 +1,5 @@
 import { SHORTCUT_ACTIONS, type ShortcutMap } from "./defaults/shortcuts";
-import { normalizeShortcutKey } from "./shortcut-utils";
+import { normalizeLabelShortcut, normalizeShortcutKey } from "./shortcut-utils";
 import { SHORTCUT_ZH_CN as text } from "../i18n/shortcuts.zh-CN";
 
 export interface ShortcutActionMeta {
@@ -16,6 +16,9 @@ export interface LabelShortcut {
   shortcut?: string;
 }
 export interface ShortcutEvent {
+  code?: string;
+  isComposing?: boolean;
+  keyCode?: number;
   key: string;
   ctrlKey?: boolean;
   metaKey?: boolean;
@@ -34,7 +37,11 @@ export interface ShortcutContext {
   actions?: readonly ShortcutActionMeta[];
 }
 export function eventShortcut(event: ShortcutEvent): string {
-  return `${event.ctrlKey || event.metaKey ? "Ctrl+" : ""}${event.altKey ? "Alt+" : ""}${event.shiftKey && event.key.length > 1 ? "Shift+" : ""}${normalizeShortcutKey(event.key)}`;
+  // Shift+1 is reported as ! on common keyboards; recover the digit from code.
+  const key =
+    event.shiftKey && /^Digit[0-9]$/.test(event.code ?? "") ? event.code!.slice(5) : event.key;
+  const shift = event.shiftKey && (key.length > 1 || /^[a-z0-9]$/i.test(key));
+  return `${event.ctrlKey || event.metaKey ? "Ctrl+" : ""}${event.altKey ? "Alt+" : ""}${shift ? "Shift+" : ""}${normalizeShortcutKey(key)}`;
 }
 export function shortcutKey(
   action: ShortcutActionMeta,
@@ -78,7 +85,8 @@ export function detectConflicts(
     }));
 }
 export function resolveShortcut(event: ShortcutEvent, ctx: ShortcutContext): string | null {
-  if (ctx.hasBlockingOverlay || ctx.isEditableTarget) return null;
+  if (ctx.hasBlockingOverlay || ctx.isEditableTarget || event.isComposing || event.keyCode === 229)
+    return null;
   const key = eventShortcut(event);
   const actions = (ctx.actions ?? SHORTCUT_ACTIONS)
     .filter(
@@ -94,10 +102,10 @@ export function resolveShortcut(event: ShortcutEvent, ctx: ShortcutContext): str
         a.id.localeCompare(b.id),
     );
   if (actions[0]) return actions[0].id;
-  if (ctx.hasLightOverlay || ctx.busy) return null;
+  if (ctx.hasLightOverlay || ctx.busy || event.repeat || event.metaKey) return null;
   const label = ctx.labelShortcuts.find(
     (item) =>
-      normalizeShortcutKey(item.shortcut ?? "") === key &&
+      normalizeLabelShortcut(item.shortcut ?? "") === key &&
       ctx.available.includes(`label:${item.id}`),
   );
   return label ? `label:${label.id}` : null;

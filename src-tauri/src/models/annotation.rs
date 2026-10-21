@@ -42,6 +42,7 @@ pub struct LabelConfig {
     pub name: String,
     pub color: String,
     #[serde(skip_serializing_if = "Option::is_none")]
+    // Host bindings may include modifiers; plugin v1 receives only a single-key projection.
     pub shortcut: Option<String>,
     pub shape_type: String,
 }

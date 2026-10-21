@@ -1,5 +1,3 @@
-import { SHORTCUT_ACTIONS } from "../lib/defaults/shortcuts";
-import { SHORTCUT_ZH_CN as text } from "../i18n/shortcuts.zh-CN";
 import { useOperations } from "../store/useOperations";
 import { useEffect } from "react";
 import { useShortcut } from "./useShortcut";
@@ -78,7 +76,13 @@ export function useKeyboardShortcuts({
   );
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
-      if (event.defaultPrevented) return;
+      if (
+        event.defaultPrevented ||
+        event.isComposing ||
+        event.keyCode === 229 ||
+        event.getModifierState("AltGraph")
+      )
+        return;
       const overlay = useOverlayStore.getState();
       const handlers = useShortcutStore.getState().handlers;
       const action = resolveShortcut(event, {
@@ -96,11 +100,8 @@ export function useKeyboardShortcuts({
         (item) => item.key === eventShortcut(event),
       );
       if (conflict) {
-        const winner =
-          SHORTCUT_ACTIONS.find((item) => item.id === action)?.label ??
-          labels.find((item) => `label:${item.id}` === action)?.name ??
-          action;
-        onShortcutConflict(`${conflict.message}${text.resolved(winner)}`);
+        if (!event.repeat) onShortcutConflict(conflict.message);
+        return;
       }
       if (action.startsWith("label:")) changeCurrentLabel(action.slice(6));
       else handlers[action]?.handler(event);

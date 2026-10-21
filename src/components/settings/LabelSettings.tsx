@@ -1,3 +1,7 @@
+import { LABEL_SHORTCUT_TEXT as keyText } from "../../i18n/label-shortcuts.zh-CN";
+import { normalizeLabelShortcut } from "../../lib/shortcut-utils";
+import { eventShortcut } from "../../lib/shortcuts";
+import { labelShortcutIssues } from "../../lib/label-shortcuts";
 import { LABEL_DRAFT_ZH_CN } from "../../i18n/label-draft.zh-CN";
 import { detectConflicts } from "../../lib/shortcuts";
 import { useShortcutStore } from "../../store/useShortcutStore";
@@ -20,6 +24,7 @@ import {
 } from "../../types/annotation";
 
 interface LabelSettingsProps {
+  onOpenShortcutSettings?: () => void;
   samples?: LabelSamples;
   labels: LabelConfig[];
   templates: LabelTemplate[];
@@ -40,6 +45,7 @@ interface LabelSettingsProps {
 }
 
 export function LabelSettings({
+  onOpenShortcutSettings,
   samples,
   labels,
   templates,
@@ -61,6 +67,8 @@ export function LabelSettings({
   const [newLabelName, setNewLabelName] = useState("");
   const [isManageOpen, setIsManageOpen] = useState(false);
   const [formError, setFormError] = useState("");
+  const shortcuts = useShortcutStore((state) => state.shortcuts);
+  const shortcutIssues = labelShortcutIssues(labels, shortcuts);
   const dirty = isDirty || !!samples?.dirty;
   const sampleConflict = samples?.enabled ? sampleNameError(labels) : "";
   const refreshSamples = samples?.refresh;
@@ -91,15 +99,15 @@ export function LabelSettings({
   }
 
   function updateShortcut(labelId: string, value: string) {
-    const shortcut = value.trim().toLowerCase();
-    if (!shortcut) {
+    const shortcut = normalizeLabelShortcut(value);
+    if (!value.trim()) {
       patchLabel(labelId, { shortcut: undefined });
       setFormError("");
       return;
     }
 
-    if (!/^[a-z0-9]$/.test(shortcut)) {
-      setFormError("快捷键只能是单个数字或字母。");
+    if (!shortcut) {
+      setFormError(keyText.invalid);
       return;
     }
 
@@ -136,6 +144,26 @@ export function LabelSettings({
   return (
     <section className="border-b border-slate-800 p-4">
       <h2 className="text-sm font-medium text-slate-200">标签配置</h2>
+      {shortcutIssues.length > 0 && (
+        <div role="alert" className="mt-2 text-xs text-amber-300">
+          <p>{keyText.conflictHelp}</p>
+          {shortcutIssues.map((issue) => (
+            <p key={issue}>{issue}</p>
+          ))}
+          <button
+            type="button"
+            className="mr-3 mt-2 underline"
+            onClick={() => setIsManageOpen(true)}
+          >
+            {keyText.fixLabels}
+          </button>
+          {onOpenShortcutSettings && (
+            <button type="button" className="underline" onClick={onOpenShortcutSettings}>
+              {keyText.fixActions}
+            </button>
+          )}
+        </div>
+      )}
       {formError && (
         <p role="alert" className="mt-2 text-xs text-red-300">
           {formError}
@@ -191,6 +219,17 @@ export function LabelSettings({
               </button>
             </div>
 
+            <p className="mt-3 text-xs text-slate-400">{keyText.recordHelp}</p>
+            {shortcutIssues.map((issue) => (
+              <p role="alert" key={issue} className="mt-1 text-xs text-amber-300">
+                {issue}
+              </p>
+            ))}
+            {formError && (
+              <p role="alert" className="mt-1 text-xs text-red-300">
+                {formError}
+              </p>
+            )}
             <fieldset disabled={samples?.busy} className="mt-4 grid min-w-0 grid-cols-2 gap-2">
               <button
                 className="rounded bg-slate-800 px-3 py-1 text-sm text-slate-200 hover:bg-slate-700"
@@ -202,7 +241,7 @@ export function LabelSettings({
               <button
                 className="rounded bg-sky-500 px-3 py-1 text-sm font-medium text-white hover:bg-sky-400 disabled:cursor-not-allowed disabled:bg-slate-700"
                 type="button"
-                disabled={!dirty || !!sampleConflict}
+                disabled={!dirty || !!sampleConflict || shortcutIssues.length > 0}
                 onClick={onSaveTemplate}
               >
                 保存
@@ -218,7 +257,7 @@ export function LabelSettings({
                 <button
                   className="rounded bg-emerald-500 px-3 py-1 text-sm font-medium text-white hover:bg-emerald-400 disabled:cursor-not-allowed disabled:bg-slate-700"
                   type="button"
-                  disabled={!dirty || !!sampleConflict}
+                  disabled={!dirty || !!sampleConflict || shortcutIssues.length > 0}
                   onClick={onSaveAndUpdateTemplate}
                 >
                   保存并更新标注
@@ -235,6 +274,7 @@ export function LabelSettings({
               <button
                 className="rounded bg-slate-800 px-3 py-1 text-sm text-slate-200 hover:bg-slate-700"
                 type="button"
+                disabled={shortcutIssues.length > 0}
                 onClick={onSaveTemplateAs}
               >
                 另存为
@@ -297,14 +337,43 @@ export function LabelSettings({
                     aria-label={`${label.name} 颜色`}
                     onChange={(event) => patchLabel(label.id, { color: event.target.value })}
                   />
-                  <input
-                    className="w-12 rounded border border-slate-700 bg-slate-950 px-2 py-1 text-center text-sm text-slate-100"
-                    maxLength={1}
-                    placeholder="-"
-                    value={label.shortcut ?? ""}
-                    aria-label={`${label.name} 快捷键`}
-                    onChange={(event) => updateShortcut(label.id, event.target.value)}
-                  />
+                  <div className="flex items-center gap-1">
+                    <input
+                      className="w-28 rounded border border-slate-700 bg-slate-950 px-2 py-1 text-center text-sm text-slate-100"
+                      placeholder="-"
+                      value={label.shortcut ?? ""}
+                      aria-label={`${label.name} 快捷键`}
+                      onChange={(event) => updateShortcut(label.id, event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.nativeEvent.isComposing || event.keyCode === 229 || event.repeat)
+                          return;
+                        if (event.key === "Tab") return;
+                        event.preventDefault();
+                        if (["Control", "Alt", "Shift", "Meta"].includes(event.key)) return;
+                        if (event.key === "Escape") {
+                          event.currentTarget.blur();
+                          return;
+                        }
+                        if (["Backspace", "Delete"].includes(event.key)) {
+                          updateShortcut(label.id, "");
+                          return;
+                        }
+                        if (event.metaKey || event.getModifierState("AltGraph")) {
+                          setFormError(keyText.invalid);
+                          return;
+                        }
+                        updateShortcut(label.id, eventShortcut(event));
+                      }}
+                    />
+                    <button
+                      type="button"
+                      aria-label={`${label.name}：${keyText.clear}`}
+                      onClick={() => updateShortcut(label.id, "")}
+                      className="px-1 text-slate-400 hover:text-slate-100"
+                    >
+                      ×
+                    </button>
+                  </div>
                   <select
                     className="rounded border border-slate-700 bg-slate-950 px-2 py-1 text-sm text-slate-100"
                     value={label.shapeType}

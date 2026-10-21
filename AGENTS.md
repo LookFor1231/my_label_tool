@@ -223,7 +223,7 @@ interface LabelConfig {
   id: string;
   name: string;
   color: string;                             // hex 色值，如 "#38bdf8"
-  shortcut?: string;                         // 单键快捷键，如 "1" "q"（仅限 [a-z0-9] 单字符）
+  shortcut?: string;                         // 宿主标签快捷键，如 "1" "Ctrl+q"；插件 v1 仅传单键投影（docs/label-shortcuts.md）
   shapeType: LabelShapeType;                 // any | rect | polygon | point
 }
 

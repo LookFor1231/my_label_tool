@@ -1,4 +1,5 @@
 import { validateAnnotationCore } from "./annotation-validation";
+import { normalizeLabelShortcut } from "./shortcut-utils";
 import { ANNOTATION_ZH_CN as annotationText } from "../i18n/annotation.zh-CN";
 import { DEFAULT_LABEL_COLORS } from "./defaults/labels";
 import type { ProjectSettings } from "../types/project-settings";
@@ -476,7 +477,11 @@ function parseLabels(value: unknown): LabelConfig[] {
       typeof label.color === "string" && label.color
         ? label.color
         : DEFAULT_LABEL_COLORS[index % DEFAULT_LABEL_COLORS.length];
-    const shortcut = typeof label.shortcut === "string" ? label.shortcut : undefined;
+    // Retain invalid legacy bindings for visible repair without rejecting annotations.
+    const shortcut =
+      typeof label.shortcut === "string"
+        ? (normalizeLabelShortcut(label.shortcut) ?? label.shortcut)
+        : undefined;
     const shapeType = parseLabelShapeType(label.shapeType, "any");
 
     return { id, name, color, shortcut, shapeType };

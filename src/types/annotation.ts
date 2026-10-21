@@ -41,6 +41,7 @@ export interface LabelConfig {
   id: string;
   name: string;
   color: string;
+  /** Host binding: single letter/digit or Ctrl+Alt+Shift combination; plugin v1 uses a single-key projection. */
   shortcut?: string;
   shapeType: LabelShapeType;
 }

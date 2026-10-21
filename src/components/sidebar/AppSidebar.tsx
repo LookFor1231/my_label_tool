@@ -417,6 +417,7 @@ export function AppSidebar({
 
       <div className={`scrollbar-dark min-h-0 max-h-[45vh] overflow-y-auto ${busyClass}`}>
         <LabelSettings
+          onOpenShortcutSettings={() => setIsShortcutSettingsOpen(true)}
           samples={labelSamples}
           canSaveTemplate={
             (isUserTemplate(selectedTemplateId) && !pluginTemplateIds.has(selectedTemplateId)) ||

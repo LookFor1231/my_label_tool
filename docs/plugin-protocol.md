@@ -275,3 +275,12 @@ manifest 声明 `batch` 时单次最多传 8 张图片；若 hello 未实际协�
 
 能力字段全部可选且缺省为 `false`（不支持）。宿主只缓存插件实际声明的能力；后续
 调用以该会话缓存为准，禁止从插件版本、宿主 API 版本或 manifest 推断实际能力。
+
+## 标签快捷键的宿主投影
+
+宿主项目和模板的 `LabelConfig.shortcut` 可包含修饰键组合；`label-preset` 与
+`exporter.export` v1 的标签 Schema 仍限定单个 `[a-z0-9]`。
+宿主导出到 v1 插件时保留合法单键，对组合键省略可选 `shortcut`，不改写项目标签
+或标注。插件输出不能用于完整恢复宿主组合键，应保留项目文件或原生 JSON。
+协议、宿主 API 与业务能力版本均不变，具体往返规则见 [标签快捷键](label-shortcuts.md)。
+

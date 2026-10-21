@@ -67,7 +67,9 @@
           "minLength": 1
         },
         "shortcut": {
-          "type": "string"
+          "type": "string",
+          "pattern": "^(Ctrl\\+)?(Alt\\+)?(Shift\\+)?[a-z0-9]$",
+          "description": "宿主标签绑定；旧插件 v1 导出仅保留单键，组合键不传入插件。"
         },
         "shapeType": {
           "enum": ["any", "rect", "polygon", "point"]

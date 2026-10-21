@@ -1,3 +1,5 @@
+import { normalizeLabelBindings } from "./label-shortcuts";
+import { projectPluginExportV1 } from "./plugin-export-shortcuts";
 import { useOperations } from "../store/useOperations";
 import type { GitHubProxySettings } from "../types/github-proxy";
 import type { AppUpdateMetadata } from "../types/app-update";
@@ -433,21 +435,28 @@ export function listTextFiles(folderPath: string, extension: string): Promise<Te
 }
 
 export function loadLabelConfigs(): Promise<LabelConfig[]> {
-  return invoke<LabelConfig[]>("load_label_configs");
+  return invoke<LabelConfig[]>("load_label_configs").then(normalizeLabelBindings);
 }
 
 export function saveLabelConfigs(labels: LabelConfig[]): Promise<void> {
   assertManualMutationAllowed();
-  return invoke("save_label_configs", { labels });
+  return invoke("save_label_configs", { labels: normalizeLabelBindings(labels) });
 }
 
 export function loadLabelTemplates(): Promise<LabelTemplate[]> {
-  return invoke<LabelTemplate[]>("load_label_templates");
+  return invoke<LabelTemplate[]>("load_label_templates").then((templates) =>
+    templates.map((template) => ({ ...template, labels: normalizeLabelBindings(template.labels) })),
+  );
 }
 
 export function saveLabelTemplates(templates: LabelTemplate[]): Promise<void> {
   assertManualMutationAllowed();
-  return invoke("save_label_templates", { templates });
+  return invoke("save_label_templates", {
+    templates: templates.map((template) => ({
+      ...template,
+      labels: normalizeLabelBindings(template.labels),
+    })),
+  });
 }
 
 export function loadShortcuts(): Promise<Record<string, string>> {
@@ -654,7 +663,7 @@ export function runPluginExport(
     request: {
       pluginId,
       formatId,
-      exportData,
+      exportData: projectPluginExportV1(exportData),
       options,
       outputBaseName,
       outputDir,
