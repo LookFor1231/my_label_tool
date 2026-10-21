@@ -1,5 +1,5 @@
 export const LABEL_SHORTCUT_TEXT = {
-  recordHelp: "点击快捷键框后按键录制。先按 Ctrl、Alt 或 Shift，再按一个字母或数字；Backspace/Delete 清除。",
+  recordHelp: "点击快捷键框后按键录制。先按 Ctrl、Alt 或 Shift，再按一个字母或数字；Backspace/Delete 清除。其他软件可能截获组合键；未录入或无法切换时，请改绑，或点击「选择标签与样例图」。",
   invalid: "快捷键须为一个字母或数字，可加 Ctrl、Alt、Shift 修饰键。",
   clear: "清除快捷键",
   fixLabels: "修改标签快捷键",
