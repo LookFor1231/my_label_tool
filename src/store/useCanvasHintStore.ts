@@ -2,11 +2,9 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { SHORTCUT_ACTIONS, type ShortcutActionId } from "../lib/defaults/shortcuts";
 
-export const DEFAULT_HINT_VISIBILITY = Object.fromEntries(
-  SHORTCUT_ACTIONS.map(({ id }) => [id, !["undo", "redo", "save"].includes(id)]),
-) as Record<ShortcutActionId, boolean>;
+import { DEFAULT_HINT_LIMITS, DEFAULT_HINT_VISIBILITY } from "../lib/defaults/canvas-hints";
+export { DEFAULT_HINT_LIMITS, DEFAULT_HINT_VISIBILITY } from "../lib/defaults/canvas-hints";
 
-export const DEFAULT_HINT_LIMITS = { operationLimit: 8, labelLimit: 8 };
 export function validHintLimit(value: unknown): value is number {
   return typeof value === "number" && Number.isInteger(value) && value >= 1 && value <= 50;
 }

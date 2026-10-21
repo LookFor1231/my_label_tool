@@ -109,7 +109,7 @@ export function LabelShortcutOverlay({
           key={label.id}
           className={`flex min-w-0 gap-2 rounded px-1 ${label.id === currentLabelId ? "bg-sky-500/25 text-sky-100" : ""}`}
         >
-          <span className="shrink-0 text-slate-400">
+          <span className="max-w-[55%] shrink-0 truncate text-slate-400">
             {label.shortcut ? formatShortcut(label.shortcut) : text.unbound}
           </span>
           <span className="truncate">{label.name}</span>

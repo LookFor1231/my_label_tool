@@ -178,7 +178,7 @@ export function LabelPicker({
                 <span className="shrink-0 text-xs text-sky-300">{text.current}</span>
               )}
               {label.shortcut && (
-                <kbd className="shrink-0 rounded bg-slate-950 px-2 py-1 text-xs text-slate-400">
+                <kbd className="max-w-[35%] shrink-0 truncate rounded bg-slate-950 px-2 py-1 text-xs text-slate-400">
                   {formatShortcut(label.shortcut)}
                 </kbd>
               )}
