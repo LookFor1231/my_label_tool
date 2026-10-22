@@ -29,6 +29,23 @@ const button = (name: string) =>
   [...document.querySelectorAll("button")].find(
     (item) => item.getAttribute("aria-label") === name || item.textContent === name,
   )!;
+const menuItem = (name: string) =>
+  [...document.querySelectorAll<HTMLElement>('[role="menuitem"]')].find(
+    (item) => item.textContent === name,
+  )!;
+/** 候选卡片用 aria-disabled 保持可聚焦与可右键，原生 disabled 会吞掉 contextmenu。 */
+async function contextMenuAt(element: Element, x = 40, y = 60) {
+  await act(async () => {
+    element.dispatchEvent(
+      new MouseEvent("contextmenu", {
+        bubbles: true,
+        cancelable: true,
+        clientX: x,
+        clientY: y,
+      }),
+    );
+  });
+}
 function render(folder: string) {
   (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
   const host = document.createElement("div");
@@ -155,8 +172,8 @@ it("loads only one page of previews and lets failed images coexist with usable c
   await act(async () => button("管理模板和标签").click());
   await act(async () => button("设置 人 的样例图").click());
   expect(api.previewProjectLabelSample).toHaveBeenCalledTimes(12);
-  expect(button("page.png · 标注 1").disabled).toBe(true);
-  expect(button("page.png · 标注 2").disabled).toBe(false);
+  expect(button("page.png · 标注 1").getAttribute("aria-disabled")).toBe("true");
+  expect(button("page.png · 标注 2").getAttribute("aria-disabled")).toBe("false");
   await act(async () => button("下一页").click());
   expect(api.previewProjectLabelSample).toHaveBeenCalledTimes(13);
   expect(button("下一页").disabled).toBe(true);
@@ -167,4 +184,50 @@ it("loads only one page of previews and lets failed images coexist with usable c
     width: 10,
     height: 10,
   });
+});
+
+it("jumps to the candidate image from the context menu and closes the management dialog", async () => {
+  useAnnotationStore.setState({
+    images: [
+      { path: "C:/project/a.png", name: "a.png" },
+      { path: "C:/project/b.png", name: "b.png" },
+    ],
+    selectedPath: "C:/project/a.png",
+    annotationsByImage: {
+      "C:/project/b.png": [{ id: "shape-b", labelId: "a", type: "rect", points: [5, 6, 20, 20] }],
+    },
+  });
+  render("C:/project");
+  await act(async () => button("管理模板和标签").click());
+  await act(async () => button("设置 人 的样例图").click());
+  await contextMenuAt(button("b.png · 标注 1"));
+  expect(document.querySelectorAll('[role="menu"]').length).toBe(1);
+  await act(async () => menuItem("跳转到当前图片").click());
+  expect(useAnnotationStore.getState().selectedPath).toBe("C:/project/b.png");
+  // 跳转后离开标签管理，避免遮挡画布
+  expect(document.querySelectorAll('[role="dialog"]').length).toBe(0);
+  expect(api.createLabelSampleCrop).not.toHaveBeenCalled();
+});
+
+it("deletes the candidate annotation from the context menu and keeps the picker open", async () => {
+  useAnnotationStore.setState({
+    images: [{ path: "C:/project/c.png", name: "c.png" }],
+    selectedPath: "C:/project/c.png",
+    annotationsByImage: {
+      "C:/project/c.png": [{ id: "shape-c", labelId: "a", type: "rect", points: [10, 20, 30, 40] }],
+    },
+  });
+  render("C:/project");
+  await act(async () => button("管理模板和标签").click());
+  await act(async () => button("设置 人 的样例图").click());
+  expect(document.body.textContent).toContain("1 个标注");
+  await contextMenuAt(button("c.png · 标注 1"));
+  await act(async () => menuItem("删除当前打标").click());
+  expect(useAnnotationStore.getState().annotationsByImage["C:/project/c.png"]).toEqual([]);
+  expect(document.body.textContent).toContain("当前项目还没有此标签的可用标注");
+  expect(document.querySelector('[role="dialog"]')).not.toBeNull();
+  expect(api.createLabelSampleCrop).not.toHaveBeenCalled();
+  // 删除走标注历史，可撤销
+  await act(async () => useAnnotationStore.getState().undo());
+  expect(useAnnotationStore.getState().annotationsByImage["C:/project/c.png"]).toHaveLength(1);
 });
