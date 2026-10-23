@@ -5,6 +5,8 @@ import { LabelSettings } from "./LabelSettings";
 import { useLabelSamples } from "../../hooks/useLabelSamples";
 import type { LabelConfig } from "../../types/annotation";
 import { useAnnotationStore } from "../../store/useAnnotationStore";
+import { useOperations } from "../../store/useOperations";
+import { ProjectMediaList } from "../sidebar/ProjectMediaList";
 
 const api = vi.hoisted(() => ({
   createLabelSampleCrop: vi.fn(async () => ({
@@ -23,6 +25,7 @@ const api = vi.hoisted(() => ({
   openLabelSampleDirectory: vi.fn(async () => {}),
 }));
 vi.mock("../../lib/tauri-api", () => api);
+vi.mock("../sidebar/ListThumbnail", () => ({ ListThumbnail: () => null }));
 const initial: LabelConfig[] = [{ id: "a", name: "人", color: "#000000", shapeType: "rect" }];
 const roots: ReturnType<typeof createRoot>[] = [];
 const button = (name: string) =>
@@ -46,7 +49,7 @@ async function contextMenuAt(element: Element, x = 40, y = 60) {
     );
   });
 }
-function render(folder: string) {
+function render(folder: string, showMediaList = false) {
   (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
   const host = document.createElement("div");
   document.body.append(host);
@@ -55,29 +58,44 @@ function render(folder: string) {
   function Harness() {
     const [labels, setLabels] = useState(initial);
     const samples = useLabelSamples(folder, initial, "built-in");
+    const images = useAnnotationStore((state) => state.images);
+    const selectedPath = useAnnotationStore((state) => state.selectedPath);
     return (
-      <LabelSettings
-        labels={labels}
-        templates={[]}
-        selectedTemplateId="built-in"
-        pluginTemplateSources={new Map()}
-        isDirty={labels !== initial}
-        canSaveTemplate={false}
-        canDeleteTemplate={false}
-        usedLabelIds={new Set()}
-        samples={samples}
-        onChangeLabels={setLabels}
-        onCancelChanges={() => {
-          samples.reset();
-          setLabels(initial);
-        }}
-        onSaveTemplate={() => void samples.save(labels, async () => {})}
-        onSaveAndUpdateTemplate={vi.fn()}
-        onNewTemplate={vi.fn()}
-        onSaveTemplateAs={vi.fn()}
-        onDeleteTemplate={vi.fn()}
-        onSelectTemplate={vi.fn()}
-      />
+      <>
+        {showMediaList && (
+          <ProjectMediaList
+            folderPath={folder}
+            images={images}
+            videos={[]}
+            selectedPath={selectedPath}
+            onSelect={useAnnotationStore.getState().select}
+            onPrepare={vi.fn()}
+            onImageMenu={vi.fn()}
+          />
+        )}
+        <LabelSettings
+          labels={labels}
+          templates={[]}
+          selectedTemplateId="built-in"
+          pluginTemplateSources={new Map()}
+          isDirty={labels !== initial}
+          canSaveTemplate={false}
+          canDeleteTemplate={false}
+          usedLabelIds={new Set()}
+          samples={samples}
+          onChangeLabels={setLabels}
+          onCancelChanges={() => {
+            samples.reset();
+            setLabels(initial);
+          }}
+          onSaveTemplate={() => void samples.save(labels, async () => {})}
+          onSaveAndUpdateTemplate={vi.fn()}
+          onNewTemplate={vi.fn()}
+          onSaveTemplateAs={vi.fn()}
+          onDeleteTemplate={vi.fn()}
+          onSelectTemplate={vi.fn()}
+        />
+      </>
     );
   }
   act(() => root.render(<Harness />));
@@ -87,6 +105,7 @@ afterEach(() => {
   document.body.innerHTML = "";
   vi.clearAllMocks();
   useAnnotationStore.setState({ images: [], annotationsByImage: {}, selectedPath: "" });
+  useOperations.setState({ operations: [], mcpControlled: false });
 });
 
 it("shows disabled sample controls without disabling label editing when no project is open", async () => {
@@ -230,4 +249,91 @@ it("deletes the candidate annotation from the context menu and keeps the picker 
   // 删除走标注历史，可撤销
   await act(async () => useAnnotationStore.getState().undo());
   expect(useAnnotationStore.getState().annotationsByImage["C:/project/c.png"]).toHaveLength(1);
+});
+
+async function openCandidateMenu() {
+  useAnnotationStore.setState({
+    images: [{ path: "C:/project/c.png", name: "c.png" }],
+    selectedPath: "C:/project/c.png",
+    annotationsByImage: {
+      "C:/project/c.png": [{ id: "shape-c", labelId: "a", type: "rect", points: [10, 20, 30, 40] }],
+    },
+  });
+  render("C:/project");
+  await act(async () => button("管理模板和标签").click());
+  await act(async () => button("设置 人 的样例图").click());
+  await contextMenuAt(button("c.png · 标注 1"));
+}
+
+it("disables candidate actions while annotations are locked and enables them after release", async () => {
+  const operation = useOperations
+    .getState()
+    .begin({ label: "save", resource: "project-annotations" });
+  await openCandidateMenu();
+  for (const name of ["删除当前打标", "跳转到当前图片"]) {
+    expect((menuItem(name) as HTMLButtonElement).disabled).toBe(true);
+    await act(async () => menuItem(name).click());
+  }
+  expect(useAnnotationStore.getState().annotationsByImage["C:/project/c.png"]).toHaveLength(1);
+  expect(document.querySelectorAll('[role="dialog"]')).toHaveLength(2);
+  await act(async () => operation.complete());
+  expect((menuItem("删除当前打标") as HTMLButtonElement).disabled).toBe(false);
+  await act(async () => menuItem("删除当前打标").click());
+  expect(useAnnotationStore.getState().annotationsByImage["C:/project/c.png"]).toEqual([]);
+});
+
+it.each(["删除当前打标", "跳转到当前图片"])(
+  "rechecks the annotation lock when executing %s",
+  async (action) => {
+    await openCandidateMenu();
+    const before = useAnnotationStore.getState();
+    await act(async () => {
+      // The event can arrive before React has rendered the new disabled state.
+      useOperations.getState().begin({ label: "save", resource: "project-annotations" });
+      menuItem(action).click();
+    });
+    expect(useAnnotationStore.getState()).toBe(before);
+    expect(document.querySelectorAll('[role="dialog"]')).toHaveLength(2);
+  },
+);
+
+it("allows candidate deletion during a snapshot script that permits annotation editing", async () => {
+  useOperations
+    .getState()
+    .begin({ label: "script", resource: "project-annotations", allowAnnotationEditing: true });
+  await openCandidateMenu();
+  await act(async () => menuItem("删除当前打标").click());
+  expect(useAnnotationStore.getState().annotationsByImage["C:/project/c.png"]).toEqual([]);
+  await act(async () => useAnnotationStore.getState().undo());
+  expect(useAnnotationStore.getState().annotationsByImage["C:/project/c.png"]).toHaveLength(1);
+});
+
+it("reveals the already selected image after its list row has been scrolled out of view", async () => {
+  const images = Array.from({ length: 100 }, (_, i) => ({
+    path: `C:/project/${i}.png`,
+    name: `${i}.png`,
+  }));
+  useAnnotationStore.setState({
+    images,
+    selectedPath: images[0].path,
+    scopeStack: [{ kind: "project" }],
+    annotationsByImage: {
+      [images[0].path]: [{ id: "shape", labelId: "a", type: "rect", points: [0, 0, 10, 10] }],
+    },
+  });
+  render("C:/project", true);
+  const scroller = document.querySelector<HTMLDivElement>(".overflow-auto")!;
+  Object.defineProperty(scroller, "clientHeight", { value: 240, configurable: true });
+  await act(async () => {
+    scroller.scrollTop = 2400;
+    scroller.dispatchEvent(new Event("scroll"));
+  });
+  expect(scroller.querySelector('button[title="C:/project/0.png"]')).toBeNull();
+  await act(async () => button("管理模板和标签").click());
+  await act(async () => button("设置 人 的样例图").click());
+  await contextMenuAt(button("0.png · 标注 1"));
+  await act(async () => menuItem("跳转到当前图片").click());
+  expect(useAnnotationStore.getState().selectedPath).toBe(images[0].path);
+  expect(scroller.scrollTop).toBe(0);
+  expect(document.querySelectorAll('[role="dialog"]')).toHaveLength(0);
 });

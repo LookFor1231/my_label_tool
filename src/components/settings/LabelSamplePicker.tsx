@@ -3,6 +3,7 @@ import type { LabelConfig } from "../../types/annotation";
 import type { LabelSampleCandidate } from "../../types/label-sample";
 import type { LabelSamples } from "../../hooks/useLabelSamples";
 import { useAnnotationStore } from "../../store/useAnnotationStore";
+import { useOperations } from "../../store/useOperations";
 import { labelSampleCandidates, SAMPLE_CANDIDATES_PER_PAGE } from "../../lib/label-sample-crops";
 import { LABEL_SAMPLE_ZH_CN as text } from "../../i18n/label-sample.zh-CN";
 import { Overlay } from "../overlay/Overlay";
@@ -25,6 +26,7 @@ export function LabelSamplePicker({
   const selectedPath = useAnnotationStore((state) => state.selectedPath);
   const selectImage = useAnnotationStore((state) => state.select);
   const deleteAnnotation = useAnnotationStore((state) => state.deleteAnnotation);
+  const canEditAnnotations = useOperations((state) => state.canEditAnnotations());
   const candidates = useMemo(
     () => labelSampleCandidates(images, annotations, label.id, selectedPath),
     [images, annotations, label.id, selectedPath],
@@ -190,15 +192,17 @@ export function LabelSamplePicker({
           <LabelSampleContextMenu
             x={menu.x}
             y={menu.y}
-            disabled={samples.busy}
+            disabled={samples.busy || !canEditAnnotations}
             onJumpToImage={() => {
-              selectImage(menu.candidate.imagePath);
+              if (samples.busy || !useOperations.getState().canEditAnnotations()) return;
+              selectImage(menu.candidate.imagePath, { reveal: true });
               onClose();
               onLocateImage?.();
             }}
-            onDeleteAnnotation={() =>
-              deleteAnnotation(menu.candidate.imagePath, menu.candidate.annotationId)
-            }
+            onDeleteAnnotation={() => {
+              if (samples.busy || !useOperations.getState().canEditAnnotations()) return;
+              deleteAnnotation(menu.candidate.imagePath, menu.candidate.annotationId);
+            }}
             onClose={() => setMenu(null)}
           />
         )}
